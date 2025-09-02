@@ -82,14 +82,14 @@ app_license = "mit"
 # Installation
 # ------------
 
-# before_install = "stems.install.before_install"
-# after_install = "stems.install.after_install"
+after_install = "stems.setup.after_install"
+after_migrate = "stems.setup.after_migrate"
 
 # Uninstallation
 # ------------
 
-# before_uninstall = "stems.uninstall.before_uninstall"
-# after_uninstall = "stems.uninstall.after_uninstall"
+before_uninstall = "stems.setup.before_uninstall"
+
 
 # Integration Setup
 # ------------------
