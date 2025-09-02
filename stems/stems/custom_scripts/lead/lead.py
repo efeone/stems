@@ -1,20 +1,35 @@
 import frappe
+from frappe.model.mapper import get_mapped_doc
 
 @frappe.whitelist()
-def create_enquiry(lead):
+def make_enquiry(source_name, target_doc=None):
     """Create a new Enquiry (Opportunity) from Lead and return Enquiry name"""
-    if not lead:
-        frappe.throw("Lead is required to create Enquiry")
 
-    lead_doc = frappe.get_doc("Lead", lead)
+    if not frappe.db.exists("Lead", source_name):
+        frappe.throw(f"Lead {source_name} not found.")
 
-    enquiry = frappe.new_doc("Opportunity")
-    enquiry.opportunity_from = "Lead"
-    enquiry.party_name = lead_doc.name
-    enquiry.customer_name = lead_doc.lead_name
-    enquiry.contact_email = lead_doc.email_id
-    enquiry.contact_mobile = lead_doc.phone
+    def set_missing_values(source, target):
+        target.opportunity_from = "Lead"
+        target.party_name = source.name
+        target.customer_name = source.lead_name
+        target.contact_email = source.email_id
+        target.contact_mobile = source.phone
 
-    enquiry.insert(ignore_permissions=True)
-
-    return enquiry.name
+    doc = get_mapped_doc(
+        "Lead",
+        source_name,
+        {
+            "Lead": {
+                "doctype": "Opportunity",
+                "field_map": {
+                    "name": "party_name",
+                    "lead_name": "customer_name",
+                    "email_id": "contact_email",
+                    "phone": "contact_mobile"
+                }
+            }
+        },
+        target_doc,
+        set_missing_values
+    )
+    return doc
