@@ -146,13 +146,11 @@ before_uninstall = "stems.install.before_uninstall"
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+doc_events = {
+    "Opportunity": {
+        "on_update": "stems.stems.custom_scripts.opportunity.opportunity.on_update"
+    }
+}
 
 # Scheduled Tasks
 # ---------------
