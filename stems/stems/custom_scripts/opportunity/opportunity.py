@@ -1,6 +1,7 @@
 import frappe
 from frappe.model.document import Document
 from frappe.desk.form.assign_to import add as add_assign
+from frappe.utils.user import get_users_with_role
 
 
 def on_update(doc, method=None):
@@ -125,3 +126,27 @@ def create_site_visit_todo(doc):
 	todo.status = "Open"
 	todo.date = doc.site_visit_scheduled_on
 	todo.insert(ignore_permissions=True)
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def get_site_engineers(doctype, txt, searchfield, start, page_len, filters):
+    """
+    Fetch employees linked to users with the 'Site Engineer' role
+    for Link field searches.
+    """
+    users = get_users_with_role("Site Engineer")
+    if not users:
+        return []
+
+    employees = frappe.get_all(
+        "Employee",
+        filters={
+            "user_id": ["in", users],
+            searchfield: ["like", f"%{txt}%"]
+        },
+        fields=["name", "employee_name"],
+        start=start,
+        page_length=page_len
+    )
+
+    return [(d.name, d.employee_name) for d in employees]
