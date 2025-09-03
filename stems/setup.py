@@ -25,6 +25,8 @@ def create_property_setters_for_stems():
 
 def delete_custom_fields_for_stems():
 	delete_custom_fields(get_custom_fields())
+	delete_custom_fields(get_item_custom_fields())
+
  
 def delete_custom_fields(custom_fields: dict):
 	'''

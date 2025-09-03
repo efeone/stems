@@ -1,0 +1,243 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": " CNP-.YY.-.####",
+ "creation": "2025-09-02 10:14:03.127184",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_7xsu",
+  "posting_date",
+  "enquiry",
+  "customer_email",
+  "site_visit_required",
+  "site_visit_scheduled_on",
+  "site_engineer_supervisor",
+  "drawing_required",
+  "column_break_zla3",
+  "lead",
+  "customer_name",
+  "customer_phone",
+  "site_property_name",
+  "site_location",
+  "preferred_start_date",
+  "preferred_date_of_handover",
+  "section_break_lqno",
+  "billing_type",
+  "customer_provided_items",
+  "column_break_y8em",
+  "budget",
+  "section_break_ruoy",
+  "customer_remarks",
+  "customer_needs",
+  "drawing_details_section",
+  "drawn_by",
+  "drawing_attachment",
+  "column_break_d6vi",
+  "drawing_remarks",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_7xsu",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Customer Need Profile",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "label": "Posting Date"
+  },
+  {
+   "fieldname": "lead",
+   "fieldtype": "Link",
+   "label": "Lead ",
+   "options": "Lead"
+  },
+  {
+   "fieldname": "enquiry",
+   "fieldtype": "Link",
+   "label": "Enquiry",
+   "options": "Opportunity"
+  },
+  {
+   "fetch_from": "enquiry.customer_name",
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "label": "Customer Name"
+  },
+  {
+   "fetch_from": "enquiry.contact_email",
+   "fieldname": "customer_email",
+   "fieldtype": "Data",
+   "label": "Customer Email"
+  },
+  {
+   "fetch_from": "enquiry.phone",
+   "fieldname": "customer_phone",
+   "fieldtype": "Data",
+   "label": "Customer Phone"
+  },
+  {
+   "default": "0",
+   "fetch_from": "enquiry.site_visit_required",
+   "fieldname": "site_visit_required",
+   "fieldtype": "Check",
+   "label": "Site Visit Required "
+  },
+  {
+   "default": "0",
+   "fieldname": "drawing_required",
+   "fieldtype": "Check",
+   "label": "Drawing Required"
+  },
+  {
+   "depends_on": "eval:doc.site_visit_required",
+   "fetch_from": "enquiry.site_visit_scheduled_on",
+   "fieldname": "site_visit_scheduled_on",
+   "fieldtype": "Date",
+   "label": "Site Visit Scheduled On"
+  },
+  {
+   "fieldname": "site_location",
+   "fieldtype": "Link",
+   "label": "Site Location",
+   "options": "Location"
+  },
+  {
+   "fieldname": "preferred_start_date",
+   "fieldtype": "Date",
+   "label": "Preferred Start Date"
+  },
+  {
+   "fieldname": "preferred_date_of_handover",
+   "fieldtype": "Date",
+   "label": "Preferred Date of Handover"
+  },
+  {
+   "fieldname": "customer_remarks",
+   "fieldtype": "Long Text",
+   "label": "Customer Remarks"
+  },
+  {
+   "fieldname": "customer_needs",
+   "fieldtype": "Table",
+   "label": "Customer Needs",
+   "options": "Customer Need Profile Item"
+  },
+  {
+   "depends_on": "eval:doc.drawing_required",
+   "fieldname": "drawing_details_section",
+   "fieldtype": "Section Break",
+   "label": "Drawing Details "
+  },
+  {
+   "fieldname": "drawing_attachment",
+   "fieldtype": "Attach",
+   "label": "Drawing Attachment "
+  },
+  {
+   "fieldname": "drawn_by",
+   "fieldtype": "Link",
+   "label": "Drawn By",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "drawing_remarks",
+   "fieldtype": "Small Text",
+   "label": "Drawing Remarks"
+  },
+  {
+   "fieldname": "column_break_d6vi",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_zla3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_ruoy",
+   "fieldtype": "Section Break"
+  },
+  {
+   "depends_on": "eval:doc.site_visit_required",
+   "fetch_from": "enquiry.site_engineer",
+   "fieldname": "site_engineer_supervisor",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "label": "Site Engineer/Supervisor",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "site_property_name",
+   "fieldtype": "Data",
+   "label": "Site/Property Name"
+  },
+  {
+   "fieldname": "section_break_lqno",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "billing_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Billing Type",
+   "options": "\nService Only\nItems\nService",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "customer_provided_items",
+   "fieldtype": "Check",
+   "label": "Customer Provided Items"
+  },
+  {
+   "fieldname": "budget",
+   "fieldtype": "Currency",
+   "label": "Budget"
+  },
+  {
+   "fieldname": "column_break_y8em",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2025-09-03 12:24:02.236629",
+ "modified_by": "Administrator",
+ "module": "STEMS",
+ "name": "Customer Need Profile",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
