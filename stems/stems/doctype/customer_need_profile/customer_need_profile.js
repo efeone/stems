@@ -5,6 +5,9 @@ frappe.ui.form.on("Customer Need Profile", {
 	refresh: function(frm) {
 		set_site_engineer_query(frm);
 		set_customer_needs_item_query(frm);
+		if (!frm.is_new() && frm.doc.docstatus === 1) {
+			add_bill_of_quantity_button(frm);
+		}
 	}
 });
 
@@ -31,4 +34,16 @@ function set_customer_needs_item_query(frm) {
 			}
 		}
 	});
+}
+
+/*
+ * Add button to create Bill of Quantity
+ */
+function add_bill_of_quantity_button(frm){
+	frm.add_custom_button(__('Bill of Quantity'), function() {
+		frappe.model.open_mapped_doc({
+			method: "stems.stems.doctype.customer_need_profile.customer_need_profile.make_bill_of_quantity",
+			frm: frm
+		});
+	}, __("Create"));
 }

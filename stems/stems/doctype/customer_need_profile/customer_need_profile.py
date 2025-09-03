@@ -74,3 +74,41 @@ def get_site_engineers(doctype, txt, searchfield, start, page_len, filters):
 	)
 
 	return [(d.name, d.employee_name) for d in employees]
+
+@frappe.whitelist()
+def make_bill_of_quantity(source_name, target_doc=None):
+	"""
+		Create a Bill of Quantity (BOQ) document from a Customer Need Profile (CNP).
+	"""
+	def postprocess(source, target):
+		target.customer_name = source.customer_name
+
+	doc = get_mapped_doc(
+		"Customer Need Profile",
+		source_name,
+		{
+			"Customer Need Profile": {
+				"doctype": "Bill of Quantity",
+				"field_map": {
+					"name": "customer_need_profile",
+					"lead": "lead",
+					"customer_name": "customer_name"
+				}
+			},
+			"Customer Need Profile Item": {
+				"doctype": "Bill of Quantity Item",
+				"field_map": {
+					"item": "item",
+					"qty": "qty",
+					"uom": "uom"
+				},
+				"postprocess": lambda source, target, source_parent: target.update({
+					"item_name": frappe.db.get_value("Item", source.item, "item_name")
+				})
+			}
+		},
+		target_doc,
+		postprocess
+	)
+
+	return doc

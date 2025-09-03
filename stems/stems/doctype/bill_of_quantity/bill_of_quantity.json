@@ -7,9 +7,11 @@
  "engine": "InnoDB",
  "field_order": [
   "posting_date",
-  "customer_need_profile",
   "lead",
+  "column_break_zhgs",
   "customer_name",
+  "customer_need_profile",
+  "section_break_fx68",
   "items"
  ],
  "fields": [
@@ -43,12 +45,20 @@
    "fieldtype": "Table",
    "label": "Items",
    "options": "Bill of Quantity Item"
+  },
+  {
+   "fieldname": "column_break_zhgs",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_fx68",
+   "fieldtype": "Section Break"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-03 12:16:24.681097",
+ "modified": "2025-09-03 16:59:02.399284",
  "modified_by": "Administrator",
  "module": "STEMS",
  "name": "Bill of Quantity",
