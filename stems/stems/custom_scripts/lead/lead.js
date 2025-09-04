@@ -11,5 +11,16 @@ frappe.ui.form.on("Lead", {
 				});
 			}, __("Create"));
 		}
-	}
+	},
+	setup: function(frm) {
+		set_sales_person_query(frm);
+    }
 });
+
+function set_sales_person_query(frm) {
+    frm.set_query("sales_person", function() {
+        return {
+            query: "stems.stems.custom_scripts.lead.lead.get_sales_user_employees"
+        };
+    });
+}
