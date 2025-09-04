@@ -1,7 +1,9 @@
 import frappe
+import json
 from frappe.model.mapper import get_mapped_doc
 from frappe.utils.user import get_users_with_role
-from frappe.desk.form.assign_to import add as add_assignment, clear as clear_assignment
+from frappe.desk.form.assign_to import add as add_assignment
+
 @frappe.whitelist()
 def make_enquiry(source_name, target_doc=None):
     """Create a new Enquiry (Opportunity) from Lead and return Enquiry name"""
@@ -69,7 +71,7 @@ def auto_assign_lead(doc, method=None):
     if not doc.sales_person:
         return
 
-    # Check if the Lead exists in DB (not a new doc)
+    # Check if the Lead exists 
     if not frappe.db.exists("Lead", doc.name):
         return
 
@@ -79,8 +81,19 @@ def auto_assign_lead(doc, method=None):
     if not user_id:
         return
 
-    # Clear old assignments to avoid duplicates
-    clear_assignment("Lead", doc.name)
+    # Check if a ToDo already exists for this Lead assigned to this user
+    todo_exists = frappe.db.exists(
+        "ToDo",
+        {
+            "reference_type": "Lead",
+            "reference_name": doc.name,
+            "owner": user_id,
+            "status": "Open"
+        }
+    )
+
+    if todo_exists:
+        return
 
     # Create new assignment
     add_assignment({
@@ -91,4 +104,25 @@ def auto_assign_lead(doc, method=None):
         "assigned_by": frappe.session.user
     })
 
+@frappe.whitelist()
+def bulk_assign_lead(docnames, sales_user):
+    """
+    Assign multiple Leads to the given Sales User
+    docnames: list of Lead names as JSON string
+    sales_user: Employee name
+    """
+    docnames = json.loads(docnames)  # Convert JSON string to list
+    assigned = []
 
+    for docname in docnames:
+        try:
+            lead = frappe.get_doc("Lead", docname)
+            # Set sales person (assuming fieldname is 'sales_person')
+            lead.sales_person = sales_user
+            lead.save()
+            frappe.db.commit()
+            assigned.append(docname)
+        except Exception as e:
+            frappe.log_error(message=str(e), title="Auto Assign Lead Error")
+
+    return {"assigned": assigned, "sales_user": sales_user}

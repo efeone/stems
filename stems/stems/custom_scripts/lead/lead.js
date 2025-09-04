@@ -17,6 +17,9 @@ frappe.ui.form.on("Lead", {
     }
 });
 
+/*
+ * Set query for Sales User
+ */
 function set_sales_person_query(frm) {
     frm.set_query("sales_person", function() {
         return {
