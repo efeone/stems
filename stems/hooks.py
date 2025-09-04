@@ -45,7 +45,8 @@ app_license = "mit"
 # include js in doctype views
 doctype_js = {
     "Lead": "stems/custom_scripts/lead/lead.js",
-	"Opportunity":"stems/custom_scripts/opportunity/opportunity.js"
+	"Opportunity":"stems/custom_scripts/opportunity/opportunity.js",
+	"Quotation":"stems/custom_scripts/quotation/quotation.js"
 }
 doctype_list_js = {
     "Lead" : "stems/custom_scripts/lead/lead_list.js"
