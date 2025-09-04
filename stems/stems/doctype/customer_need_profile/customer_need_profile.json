@@ -192,7 +192,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Billing Type",
-   "options": "\nService Only\nItems\nService",
+   "options": "\nService Only\nItems and Service",
    "reqd": 1
   },
   {
@@ -215,7 +215,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-09-03 12:24:02.236629",
+ "modified": "2025-09-04 10:12:27.519845",
  "modified_by": "Administrator",
  "module": "STEMS",
  "name": "Customer Need Profile",
