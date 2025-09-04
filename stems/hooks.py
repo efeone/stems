@@ -47,7 +47,9 @@ doctype_js = {
     "Lead": "stems/custom_scripts/lead/lead.js",
 	"Opportunity":"stems/custom_scripts/opportunity/opportunity.js"
 }
-# doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
+doctype_list_js = {
+    "Lead" : "stems/custom_scripts/lead/lead_list.js"
+    }
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
 
@@ -149,6 +151,9 @@ before_uninstall = "stems.install.before_uninstall"
 doc_events = {
     "Opportunity": {
         "on_update": "stems.stems.custom_scripts.opportunity.opportunity.on_update"
+    },
+    "Lead": {
+        "on_update": "stems.stems.custom_scripts.lead.lead.auto_assign_lead"
     }
 }
 

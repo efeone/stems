@@ -10,6 +10,8 @@ from stems.custom.custom_field.quotation import get_quotation_custom_fields
 def after_migrate():
 	# Creating STEMS specific custom fields
 	create_custom_fields(get_custom_fields(), ignore_validate=True)
+	create_custom_fields(get_lead_custom_fields(), ignore_validate=True)
+
 
 	# Creating STEMS specific custom roles
 	create_custom_roles(get_stems_roles())
@@ -34,6 +36,7 @@ def delete_custom_fields_for_stems():
 	delete_custom_fields(get_item_custom_fields())
 	delete_custom_fields(get_opportunity_custom_fields())
 	delete_custom_fields(get_quotation_custom_fields())
+	delete_custom_fields(get_lead_custom_fields())
 
 def delete_custom_fields(custom_fields: dict):
 	'''
@@ -123,3 +126,19 @@ def get_property_setters():
 	property_setters = []
 	return property_setters
 
+
+def get_lead_custom_fields():
+	'''
+	Custom fields that need to be added to the Lead doctype
+	'''
+	return {
+		"Lead": [
+			{
+				"fieldname": "sales_person",
+				"fieldtype": "Link",
+				"label": "Sales Person",
+				"options": "Employee",
+				"insert_after": "source"
+			}
+		]
+	}
