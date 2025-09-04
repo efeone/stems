@@ -1,7 +1,12 @@
 frappe.ui.form.on("Lead", {
 	refresh: function(frm) {
-		frm.remove_custom_button("Opportunity", "Create");
-		frm.page.remove_inner_button("Opportunity", "Create");
+		setTimeout(() => {
+			frm.remove_custom_button("Opportunity", "Create");
+			frm.remove_custom_button("Prospect", "Create");
+
+			if (frm.page && frm.page.remove_inner_button) {
+				frm.page.remove_inner_button("Opportunity", "Create");
+			}
 
 		if (!frm.is_new()) {
 			frm.add_custom_button(__('Enquiry'), function() {
@@ -11,6 +16,7 @@ frappe.ui.form.on("Lead", {
 				});
 			}, __("Create"));
 		}
+		}, 10); 
 	},
 	setup: function(frm) {
 		set_sales_person_query(frm);
