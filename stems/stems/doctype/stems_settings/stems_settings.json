@@ -1,0 +1,74 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-09-04 09:50:56.489295",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "notification_settings_section",
+  "enable_quotation_approval_notifcation",
+  "quotation_approval_notifcation_template",
+  "column_break_zbaj",
+  "quotation_print_format"
+ ],
+ "fields": [
+  {
+   "default": "0",
+   "description": "Enabling this will send Quotation to Customer for thier approval",
+   "fieldname": "enable_quotation_approval_notifcation",
+   "fieldtype": "Check",
+   "label": "Enable Quotation Approval Notifcation"
+  },
+  {
+   "depends_on": "eval:doc.enable_quotation_approval_notifcation",
+   "fieldname": "quotation_approval_notifcation_template",
+   "fieldtype": "Link",
+   "label": "Quotation Approval Notifcation Template",
+   "mandatory_depends_on": "eval:doc.enable_quotation_approval_notifcation",
+   "options": "Email Template"
+  },
+  {
+   "depends_on": "eval:doc.enable_quotation_approval_notifcation",
+   "description": "System will use standard print format if it's not set",
+   "fieldname": "quotation_print_format",
+   "fieldtype": "Link",
+   "label": "Quotation Print Format",
+   "options": "Print Format"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "notification_settings_section",
+   "fieldtype": "Section Break",
+   "label": "Notification Settings"
+  },
+  {
+   "fieldname": "column_break_zbaj",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2025-09-04 10:08:52.939497",
+ "modified_by": "Administrator",
+ "module": "STEMS",
+ "name": "STEMS Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
