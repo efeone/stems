@@ -44,13 +44,13 @@ app_license = "mit"
 
 # include js in doctype views
 doctype_js = {
-    "Lead": "stems/custom_scripts/lead/lead.js",
+	"Lead": "stems/custom_scripts/lead/lead.js",
 	"Opportunity":"stems/custom_scripts/opportunity/opportunity.js",
 	"Quotation":"stems/custom_scripts/quotation/quotation.js"
 }
 doctype_list_js = {
-    "Lead" : "stems/custom_scripts/lead/lead_list.js"
-    }
+	"Lead" : "stems/custom_scripts/lead/lead_list.js"
+	}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
 
@@ -150,12 +150,15 @@ before_uninstall = "stems.install.before_uninstall"
 # Hook on document methods and events
 
 doc_events = {
-    "Opportunity": {
-        "on_update": "stems.stems.custom_scripts.opportunity.opportunity.on_update"
-    },
-    "Lead": {
-        "on_update": "stems.stems.custom_scripts.lead.lead.auto_assign_lead"
-    }
+	"Opportunity": {
+		"on_update": "stems.stems.custom_scripts.opportunity.opportunity.on_update"
+	},
+	"Lead": {
+		"on_update": "stems.stems.custom_scripts.lead.lead.auto_assign_lead"
+	},
+	"Quotation": {
+		"on_update": "stems.stems.custom_scripts.quotation.quotation.send_customer_approval_email"
+	}
 }
 
 # Scheduled Tasks
