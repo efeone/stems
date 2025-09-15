@@ -1,10 +1,12 @@
 frappe.ui.form.on("Opportunity", {
+	onload_post_render: function(frm) {
+		set_item_code_query(frm);
+	},
 	refresh: function(frm) {
 		if (!frm.is_new()) {
 			add_customer_need_profile_button(frm);
 		}
-		set_item_code_query(frm);
-        set_site_engineer_query(frm);
+		set_site_engineer_query(frm);
 	}
 });
 
@@ -38,9 +40,9 @@ function set_item_code_query(frm) {
  * Set query for site_engineer
  */
 function set_site_engineer_query(frm) {
-    frm.set_query("site_engineer", function() {
-        return {
-            query: "stems.stems.custom_scripts.opportunity.opportunity.get_site_engineers"
-        };
-    });
+	frm.set_query("site_engineer", function() {
+		return {
+			query: "stems.stems.custom_scripts.opportunity.opportunity.get_site_engineers"
+		};
+	});
 }
