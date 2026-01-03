@@ -150,3 +150,64 @@ def get_site_engineers(doctype, txt, searchfield, start, page_len, filters):
     )
 
     return [(d.name, d.employee_name) for d in employees]
+
+@frappe.whitelist()
+def make_boq(source_name, target_doc=None):
+    """
+    Create BOQ from Opportunity
+    - customer_name from lead_name
+    - party_name → lead in BOQ
+    - fetch any Customer Need Profile for this enquiry (draft or submitted)
+    - map items from Opportunity.items → BOQ.items
+      only if item_code exists and qty > 0
+      set BOQ item 'name' = Opportunity 'item_code'
+    """
+
+    def set_missing_values(source, target):
+        # Link Opportunity
+        target.opportunity = source.name
+
+        # Customer name from lead_name
+        if source.lead_name:
+            target.customer_name = source.lead_name
+
+        # Map Opportunity.party_name → BOQ.lead
+        if getattr(source, "party_name", None):
+            target.lead = source.party_name
+
+        # Fetch any Customer Need Profile for this enquiry
+        cnp = frappe.db.get_value(
+            "Customer Need Profile",
+            {"enquiry": source.name},
+            "name",
+            order_by="modified desc"
+        )
+        if cnp:
+            target.customer_need_profile = cnp
+
+        # Map items from Opportunity → BOQ (only if valid)
+        if hasattr(source, "items") and source.items:
+            for row in source.items:
+                if row.item_code and row.qty:
+                    item = target.append("items", {})
+                    item.name = row.item_code       # BOQ item name = item_code
+                    item.item_name = row.item_name
+                    item.qty = row.qty
+                    item.uom = row.uom
+
+    doc = frappe.model.mapper.get_mapped_doc(
+        "Opportunity",
+        source_name,
+        {
+            "Opportunity": {
+                "doctype": "Bill of Quantity",
+                "field_map": {
+                    "name": "opportunity"
+                }
+            }
+        },
+        target_doc,
+        set_missing_values
+    )
+
+    return doc
