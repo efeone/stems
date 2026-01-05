@@ -164,33 +164,26 @@ def make_boq(source_name, target_doc=None):
     """
 
     def set_missing_values(source, target):
-        # Link Opportunity
         target.opportunity = source.name
 
-        # Customer name from lead_name
         if source.lead_name:
             target.customer_name = source.lead_name
 
-        # Map Opportunity.party_name → BOQ.lead
         if getattr(source, "party_name", None):
             target.lead = source.party_name
 
-        # Fetch any Customer Need Profile for this enquiry
-        cnp = frappe.db.get_value(
+        cnp = frappe.db.exists(
             "Customer Need Profile",
-            {"enquiry": source.name},
-            "name",
-            order_by="modified desc"
+            {"enquiry": source.name}
         )
         if cnp:
             target.customer_need_profile = cnp
 
-        # Map items from Opportunity → BOQ (only if valid)
         if hasattr(source, "items") and source.items:
             for row in source.items:
-                if row.item_code and row.qty:
+                if row.item_code and row.qty > 0:
                     item = target.append("items", {})
-                    item.name = row.item_code       # BOQ item name = item_code
+                    item.name = row.item_code
                     item.item_name = row.item_name
                     item.qty = row.qty
                     item.uom = row.uom
