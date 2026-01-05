@@ -42,5 +42,20 @@ def get_opportunity_custom_fields():
 				"fetch_from": "lead.lead_name",
 				"read_only": 1
 			},
+            {
+			"fieldname": "sketch_section",
+			"label": "Sketch",
+			"fieldtype": "Section Break",
+			"insert_after": "probability",
+		    },
+			{
+				"fieldname": "sketch_table",
+				"label": "Sketch Table",
+				"fieldtype": "Table",
+				"options": "Sketch",
+				"insert_after": "sketch_section",
+				"depends_on": "eval:doc.drawing_required",
+			},
+
 		]
 	}
