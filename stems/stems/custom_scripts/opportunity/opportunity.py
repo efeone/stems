@@ -3,7 +3,6 @@ from frappe.model.document import Document
 from frappe.desk.form.assign_to import add as add_assign
 from frappe.utils.user import get_users_with_role
 
-
 def on_update(doc, method=None):
 	"""
 	Triggered on Opportunity update.
@@ -204,3 +203,33 @@ def make_boq(source_name, target_doc=None):
     )
 
     return doc
+
+def update_lead_qualification_status(doc, method=None):
+    """
+    Update Lead qualification status when Opportunity is created from Lead
+    """
+
+    if doc.opportunity_from != "Lead":
+        return
+
+    lead_name = doc.party_name
+    if not lead_name:
+        return
+
+    if not frappe.db.exists("Lead", lead_name):
+        return
+
+    current_status = frappe.db.get_value(
+        "Lead",
+        lead_name,
+        "qualification_status"
+    )
+
+    if current_status != "Qualified":
+        frappe.db.set_value(
+            "Lead",
+            lead_name,
+            "qualification_status",
+            "Qualified"
+        )
+
