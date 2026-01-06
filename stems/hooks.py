@@ -154,7 +154,8 @@ doc_events = {
 		"on_update": "stems.stems.custom_scripts.opportunity.opportunity.on_update"
 	},
 	"Lead": {
-		"on_update": "stems.stems.custom_scripts.lead.lead.auto_assign_lead"
+		"on_update": "stems.stems.custom_scripts.lead.lead.auto_assign_lead",
+		"before_save": "stems.stems.custom_scripts.lead.lead.set_owner_from_sales_person",
 	},
 	"Quotation": {
 		"on_update": "stems.stems.custom_scripts.quotation.quotation.send_customer_approval_email"
