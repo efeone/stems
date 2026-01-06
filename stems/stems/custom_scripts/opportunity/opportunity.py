@@ -45,7 +45,7 @@ def create_site_visit_event(doc):
 
 	existing_event = frappe.db.exists({
 		"doctype": "Event",
-		"reference_type": "Opportunity",
+		"reference_doctype": "Opportunity",
 		"reference_name": doc.name,
 		"subject": ["like", f"Site Visit - {party}%"]
 	})
@@ -56,7 +56,7 @@ def create_site_visit_event(doc):
 	event.subject = f"Site Visit - {party}"
 	event.event_type = "Private"
 	event.starts_on = doc.site_visit_scheduled_on
-	event.reference_type = "Opportunity"
+	event.reference_doctype = "Opportunity"
 	event.reference_name = doc.name
 	event.status = "Open"
 
@@ -68,10 +68,10 @@ def create_site_visit_event(doc):
 		participant.reference_doctype = "Employee"
 		participant.reference_docname = doc.site_engineer
 
-	if doc.opportunity_owner:
-		participant = event.append("event_participants", {})
-		participant.reference_doctype = "Opportunity"
-		participant.reference_docname = doc.name
+
+	participant = event.append("event_participants", {})
+	participant.reference_doctype = "Opportunity"
+	participant.reference_docname = doc.name
 
 	if doc.opportunity_from:
 		participant = event.append("event_participants", {})
@@ -183,7 +183,7 @@ def make_boq(source_name, target_doc=None):
             for row in source.items:
                 if row.item_code and row.qty > 0:
                     item = target.append("items", {})
-                    item.name = row.item_code
+                    item.item = row.item_code
                     item.item_name = row.item_name
                     item.qty = row.qty
                     item.uom = row.uom
