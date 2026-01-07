@@ -204,107 +204,123 @@ def create_site_visit_todo(doc):
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs
 def get_site_engineers(doctype, txt, searchfield, start, page_len, filters):
-    """
-    Fetch employees linked to users with the 'Site Engineer' role
-    for Link field searches.
-    """
-    users = get_users_with_role("Site Engineer")
-    if not users:
-        return []
+	"""
+	Fetch employees linked to users with the 'Site Engineer' role
+	for Link field searches.
+	"""
+	users = get_users_with_role("Site Engineer")
+	if not users:
+		return []
 
-    employees = frappe.get_all(
-        "Employee",
-        filters={
-            "user_id": ["in", users],
-            searchfield: ["like", f"%{txt}%"]
-        },
-        fields=["name", "employee_name"],
-        start=start,
-        page_length=page_len
-    )
+	employees = frappe.get_all(
+		"Employee",
+		filters={
+			"user_id": ["in", users],
+			searchfield: ["like", f"%{txt}%"]
+		},
+		fields=["name", "employee_name"],
+		start=start,
+		page_length=page_len
+	)
 
-    return [(d.name, d.employee_name) for d in employees]
+	return [(d.name, d.employee_name) for d in employees]
 
 @frappe.whitelist()
 def make_boq(source_name, target_doc=None):
-    """
-    Create BOQ from Opportunity
-    - customer_name from lead_name
-    - party_name → lead in BOQ
-    - fetch any Customer Need Profile for this enquiry (draft or submitted)
-    - map items from Opportunity.items → BOQ.items
-      only if item_code exists and qty > 0
-      set BOQ item 'name' = Opportunity 'item_code'
-    """
+	"""
+	Create BOQ from Opportunity
+	- customer_name from lead_name
+	- party_name → lead in BOQ
+	- fetch any Customer Need Profile for this enquiry (draft or submitted)
+	- map items from Opportunity.items → BOQ.items
+	  only if item_code exists and qty > 0
+	  set BOQ item 'name' = Opportunity 'item_code'
+	"""
 
-    def set_missing_values(source, target):
-        target.opportunity = source.name
+	def set_missing_values(source, target):
+		target.opportunity = source.name
 
-        if source.lead_name:
-            target.customer_name = source.lead_name
+		if source.lead_name:
+			target.customer_name = source.lead_name
 
-        if getattr(source, "party_name", None):
-            target.lead = source.party_name
+		if getattr(source, "party_name", None):
+			target.lead = source.party_name
 
-        cnp = frappe.db.exists(
-            "Customer Need Profile",
-            {"enquiry": source.name}
-        )
-        if cnp:
-            target.customer_need_profile = cnp
+		cnp = frappe.db.exists(
+			"Customer Need Profile",
+			{"enquiry": source.name}
+		)
+		if cnp:
+			target.customer_need_profile = cnp
 
-        if hasattr(source, "items") and source.items:
-            for row in source.items:
-                if row.item_code and row.qty > 0:
-                    item = target.append("items", {})
-                    item.item = row.item_code
-                    item.item_name = row.item_name
-                    item.qty = row.qty
-                    item.uom = row.uom
+		if hasattr(source, "items") and source.items:
+			for row in source.items:
+				if row.item_code and row.qty > 0:
+					item = target.append("items", {})
+					item.item = row.item_code
+					item.item_name = row.item_name
+					item.qty = row.qty
+					item.uom = row.uom
 
-    doc = frappe.model.mapper.get_mapped_doc(
-        "Opportunity",
-        source_name,
-        {
-            "Opportunity": {
-                "doctype": "Bill of Quantity",
-                "field_map": {
-                    "name": "opportunity"
-                }
-            }
-        },
-        target_doc,
-        set_missing_values
-    )
+	doc = frappe.model.mapper.get_mapped_doc(
+		"Opportunity",
+		source_name,
+		{
+			"Opportunity": {
+				"doctype": "Bill of Quantity",
+				"field_map": {
+					"name": "opportunity"
+				}
+			}
+		},
+		target_doc,
+		set_missing_values
+	)
 
-    return doc
+	return doc
 
 def update_lead_qualification_status(doc, method=None):
-    """
-    Update Lead qualification status when Opportunity is created from Lead
-    """
+	"""
+	Update Lead qualification status when Opportunity is created from Lead
+	"""
 
-    if doc.opportunity_from != "Lead":
-        return
+	if doc.opportunity_from != "Lead":
+		return
 
-    lead_name = doc.party_name
-    if not lead_name:
-        return
+	lead_name = doc.party_name
+	if not lead_name:
+		return
 
-    if not frappe.db.exists("Lead", lead_name):
-        return
+	if not frappe.db.exists("Lead", lead_name):
+		return
 
-    current_status = frappe.db.get_value(
-        "Lead",
-        lead_name,
-        "qualification_status"
-    )
+	current_status = frappe.db.get_value(
+		"Lead",
+		lead_name,
+		"qualification_status"
+	)
 
-    if current_status != "Qualified":
-        frappe.db.set_value(
-            "Lead",
-            lead_name,
-            "qualification_status",
-            "Qualified"
-        )
+	if current_status != "Qualified":
+		frappe.db.set_value(
+			"Lead",
+			lead_name,
+			"qualification_status",
+			"Qualified"
+		)
+
+def before_save_opportunity(doc, method=None):
+	"""
+	Ensure title is always populated:
+	- If opportunity_name exists → title = opportunity_name
+	- Else → If lead_name exists → title = lead_name
+	- Else → title = party_name
+	"""
+
+	if doc.opportunity_name:
+		doc.title = doc.opportunity_name
+	elif doc.lead_name:
+		doc.title = doc.lead_name
+	else:
+		doc.title = doc.party_name
+
 
