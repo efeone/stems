@@ -43,10 +43,10 @@ def get_opportunity_custom_fields():
 				"read_only": 1
 			},
             {
-			"fieldname": "sketch_section",
-			"label": "Sketch",
-			"fieldtype": "Section Break",
-			"insert_after": "probability",
+				"fieldname": "sketch_section",
+				"label": "Sketch",
+				"fieldtype": "Section Break",
+				"insert_after": "probability",
 		    },
 			{
 				"fieldname": "sketch_table",
