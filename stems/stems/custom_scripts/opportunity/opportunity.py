@@ -56,7 +56,7 @@ def create_site_visit_event(doc):
 	event.event_type = "Private"
 	event.starts_on = doc.site_visit_scheduled_on
 	event.reference_doctype = "Opportunity"
-	event.reference_name = doc.name
+	event.reference_docname = doc.name
 	event.status = "Open"
 
 	event.insert(ignore_permissions=True)
@@ -84,7 +84,78 @@ def create_site_visit_event(doc):
 			participant.reference_docname = linked_docname
 
 	event.save(ignore_permissions=True)
+	send_event_notification(event, doc)
 
+def send_event_notification(event, opportunity):
+	"""
+	Send email notification to all participants of a Site Visit Event.
+	"""
+	template_name = frappe.db.get_single_value("STEMS Settings", "event_email_template")
+	if not template_name:
+		frappe.log_error(frappe.get_traceback(), "Event Email Template Missing in STEMS Settings")
+		return
+
+	recipients = set()
+	for p in event.event_participants:
+		if p.reference_doctype == "Employee":
+			email = frappe.db.get_value(
+				"Employee", p.reference_docname, "prefered_email"
+			)
+			if not email:
+				user_id = frappe.db.get_value(
+					"Employee", p.reference_docname, "user_id"
+				)
+				if user_id:
+					email = frappe.db.get_value("User", user_id, "email")
+			if email:
+				recipients.add(email)
+		elif p.reference_doctype == "Opportunity":
+			email = frappe.db.get_value(
+				"Opportunity",
+				p.reference_docname,
+				"contact_email"
+			)
+			if email:
+				recipients.add(email)
+		elif p.reference_doctype == "Customer":
+			result = frappe.db.sql("""
+				SELECT
+					COALESCE(ce.email_id, c.email_id) AS email
+				FROM `tabContact` c
+				INNER JOIN `tabDynamic Link` dl
+					ON dl.parent = c.name
+				LEFT JOIN `tabContact Email` ce
+					ON ce.parent = c.name
+				   AND ce.is_primary = 1
+				WHERE dl.link_doctype = 'Customer'
+				  AND dl.link_name = %s
+				  AND (ce.email_id IS NOT NULL OR c.email_id IS NOT NULL)
+				LIMIT 1
+			""", p.reference_docname, as_dict=True)
+
+			if result and result[0].email:
+				recipients.add(result[0].email)
+
+	if not recipients:
+		frappe.log_error(frappe.get_traceback(),f"No recipients for {event.name}")
+		return
+
+	template = frappe.get_doc("Email Template", template_name)
+	context = {
+		"event": event,
+		"opportunity": opportunity,
+		"party_name": opportunity.party_name,
+		"starts_on": event.starts_on,
+	}
+	subject = frappe.render_template(template.subject, context)
+	message = frappe.render_template(template.response, context)
+	frappe.sendmail(
+		recipients=list(recipients),
+		subject=subject,
+		message=message,
+		reference_doctype="Event",
+		reference_name=event.name,
+	)
 
 def create_site_visit_todo(doc):
 	"""

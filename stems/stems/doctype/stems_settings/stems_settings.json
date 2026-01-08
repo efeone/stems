@@ -8,6 +8,8 @@
   "notification_settings_section",
   "enable_quotation_approval_notifcation",
   "quotation_approval_notifcation_template",
+  "enable_opportunity_activity_notification",
+  "event_email_template",
   "column_break_zbaj",
   "quotation_print_format"
  ],
@@ -44,13 +46,27 @@
   {
    "fieldname": "column_break_zbaj",
    "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_opportunity_activity_notification",
+   "fieldtype": "Check",
+   "label": "Enable Opportunity Activity Notification"
+  },
+  {
+   "depends_on": "eval:doc.enable_opportunity_activity_notification",
+   "description": "Email Template used to notify participants when a Site Visit Event is created.",
+   "fieldname": "event_email_template",
+   "fieldtype": "Link",
+   "label": "Site Visit Notification Template",
+   "options": "Email Template"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-09-04 10:08:52.939497",
+ "modified": "2026-01-08 11:53:27.804468",
  "modified_by": "Administrator",
  "module": "STEMS",
  "name": "STEMS Settings",
