@@ -11,6 +11,7 @@
   "column_break_zhgs",
   "customer_name",
   "customer_need_profile",
+  "billing_type",
   "section_break_fx68",
   "items"
  ],
@@ -53,12 +54,19 @@
   {
    "fieldname": "section_break_fx68",
    "fieldtype": "Section Break"
+  },
+  {
+   "fetch_from": "customer_need_profile.billing_type",
+   "fieldname": "billing_type",
+   "fieldtype": "Select",
+   "label": "Billing Type",
+   "options": "\nService Only\nItem and Service"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-03 16:59:02.399284",
+ "modified": "2026-01-07 17:27:12.786748",
  "modified_by": "Administrator",
  "module": "STEMS",
  "name": "Bill of Quantity",
