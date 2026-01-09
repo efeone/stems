@@ -8,8 +8,55 @@ frappe.ui.form.on("Customer Need Profile", {
 		if (!frm.is_new() && frm.doc.docstatus === 1) {
 			add_bill_of_quantity_button(frm);
 		}
+	},
+	billing_type: function(frm) {
+		update_customer_provided(frm);
+	},
+});
+
+frappe.ui.form.on('Customer Need Profile Item', {
+	item: function(frm, cdt, cdn) {
+		update_row_customer_provided(frm, cdt, cdn);
+	},
+	customer_needs_add: function(frm, cdt, cdn) {
+		update_row_customer_provided(frm, cdt, cdn);
 	}
 });
+
+/**
+ * Update `customer_provided` for all customer needs
+ * based on Billing Type and item stock status.
+ */
+function update_customer_provided(frm) {
+	(frm.doc.customer_needs || []).forEach(row => {
+		update_row_customer_provided(frm, row.doctype, row.name);
+	});
+}
+
+/**
+ * Update `customer_provided` for a single item row
+ * when Billing Type is "Service Only" and item is stock.
+ */
+function update_row_customer_provided(frm, cdt, cdn) {
+	const row = locals[cdt][cdn];
+
+	if (!row || !row.item) {
+		frappe.model.set_value(cdt, cdn, "customer_provided", 0);
+		return;
+	}
+
+	if (frm.doc.billing_type !== "Service Only") {
+		frappe.model.set_value(cdt, cdn, "customer_provided", 0);
+		return;
+	}
+
+	frappe.db.get_value("Item", row.item, "is_stock_item")
+		.then(r => {
+			if (r && r.message && r.message.is_stock_item) {
+				frappe.model.set_value(cdt, cdn, "customer_provided", 1);
+			}
+		});
+}
 
 /*
  * Set query for site_engineer_supervisor
