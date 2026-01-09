@@ -135,6 +135,10 @@ def send_event_notification(event, opportunity):
 
 			if result and result[0].email:
 				recipients.add(result[0].email)
+		elif p.reference_doctype == "Lead":
+			email = frappe.db.get_value("Lead", p.reference_docname, "email_id")
+			if email:
+				recipients.add(email)
 
 	if not recipients:
 		frappe.log_error(frappe.get_traceback(),f"No recipients for {event.name}")
