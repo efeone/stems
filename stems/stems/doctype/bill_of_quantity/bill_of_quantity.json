@@ -60,13 +60,13 @@
    "fieldname": "billing_type",
    "fieldtype": "Select",
    "label": "Billing Type",
-   "options": "\nService Only\nItem and Service"
+   "options": "\nService Only\nItems and Service"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-07 17:27:12.786748",
+ "modified": "2026-01-13 11:31:34.375990",
  "modified_by": "Administrator",
  "module": "STEMS",
  "name": "Bill of Quantity",
