@@ -10,7 +10,8 @@
   "item_name",
   "qty",
   "uom",
-  "customer_provided"
+  "customer_provided",
+  "description"
  ],
  "fields": [
   {
@@ -48,13 +49,20 @@
    "fieldtype": "Check",
    "in_list_view": 1,
    "label": "Customer Provided"
+  },
+  {
+   "fetch_from": "item.description",
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Description"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-01-09 14:47:59.581252",
+ "modified": "2026-01-13 11:48:01.641289",
  "modified_by": "Administrator",
  "module": "STEMS",
  "name": "Bill of Quantity Item",
