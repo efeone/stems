@@ -1,7 +1,7 @@
 import frappe
 from frappe.model.mapper import get_mapped_doc
 from frappe.email.doctype.email_template.email_template import get_email_template
-from frappe.utils import getdate, nowdate
+from frappe.utils import getdate, nowdate , add_days
 from frappe import _
 from erpnext.selling.doctype.quotation.quotation import _make_customer, get_ordered_items
 
@@ -135,3 +135,42 @@ def send_customer_approval_email(doc, method=None):
         reference_name=doc.name,
         attachments=attachments
     )
+
+
+def follow_up_notification():
+	"""
+	Send an follow-up notification to the Sales Person
+	if a Quotation remains in Draft beyond the configured
+	follow-up days in STEMS Settings.
+	"""
+	settings = frappe.get_single("STEMS Settings")
+	if not settings.follow_up_days or not settings.follow_up_notification_template:
+		return
+	follow_up_days = int(settings.follow_up_days)
+	today = getdate(nowdate())
+	quotations = frappe.get_all(
+		"Quotation",
+		filters={"docstatus": 0},
+		fields=["name", "transaction_date", "sales_person"]
+	)
+	for q in quotations:
+		if not q.transaction_date or not q.sales_person:
+			continue
+		transaction_date = getdate(q.transaction_date)
+		follow_up_trigger_date = add_days(transaction_date, follow_up_days)
+		if today < follow_up_trigger_date:
+			continue
+		user = frappe.db.get_value("Employee", q.sales_person, "user_id")
+		if not user:
+			continue
+		message = settings.follow_up_notification_template.format(
+			quotation=q.name
+		)
+		frappe.get_doc({
+			"doctype": "Notification Log",
+			"subject": "Quotation Follow-up Required",
+			"email_content": message,
+			"for_user": user,
+			"document_type": "Quotation",
+			"document_name": q.name
+		}).insert(ignore_permissions=True)

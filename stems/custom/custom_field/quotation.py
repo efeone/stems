@@ -18,5 +18,13 @@ def get_quotation_custom_fields():
 				"label": "Required Items",
 				"insert_after": "items",
 			},
+			{
+				"fieldname": "sales_person",
+				"fieldtype": "Link",
+				"options": "Employee",
+				"label": "Sales Person",
+				"insert_after": "valid_till",
+			},
+			
 		]
 	}

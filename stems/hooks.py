@@ -166,13 +166,13 @@ doc_events = {
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
+scheduler_events = {
 # 	"all": [
 # 		"stems.tasks.all"
 # 	],
-# 	"daily": [
-# 		"stems.tasks.daily"
-# 	],
+	"daily": [
+		 "stems.stems.custom_scripts.quotation.quotation.follow_up_notification"
+	],
 # 	"hourly": [
 # 		"stems.tasks.hourly"
 # 	],
@@ -182,7 +182,7 @@ doc_events = {
 # 	"monthly": [
 # 		"stems.tasks.monthly"
 # 	],
-# }
+ }
 
 # Testing
 # -------
