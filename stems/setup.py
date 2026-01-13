@@ -108,7 +108,7 @@ def get_stems_roles():
 	'''
 		Method to get Stems specific roles
 	'''
-	return ['Site Engineer','Drawing User','Estimation User']
+	return ['Site Engineer','Drawing User','Estimation User',' General Manager']
 
 def get_custom_fields():
 	'''
