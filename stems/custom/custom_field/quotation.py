@@ -14,7 +14,7 @@ def get_quotation_custom_fields():
 			{
 				"fieldname": "required_items",
 				"fieldtype": "Table",
-				"options": "Quotation Item",
+				"options": "Quotation Required Item",
 				"label": "Required Items",
 				"insert_after": "items",
 			},
