@@ -7,11 +7,11 @@
  "engine": "InnoDB",
  "field_order": [
   "item",
-  "item_name",
-  "qty",
+  "description",
   "uom",
+  "qty",
   "customer_provided",
-  "description"
+  "item_name"
  ],
  "fields": [
   {
@@ -26,7 +26,6 @@
    "fetch_from": "item.item_name",
    "fieldname": "item_name",
    "fieldtype": "Data",
-   "in_list_view": 1,
    "label": "Item Name"
   },
   {
@@ -62,7 +61,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-01-13 11:48:01.641289",
+ "modified": "2026-01-14 12:06:40.215779",
  "modified_by": "Administrator",
  "module": "STEMS",
  "name": "Bill of Quantity Item",
