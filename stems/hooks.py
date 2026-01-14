@@ -153,6 +153,7 @@ doc_events = {
 	"Opportunity": {
 		"on_update": "stems.stems.custom_scripts.opportunity.opportunity.on_update",
 		"after_insert": "stems.stems.custom_scripts.opportunity.opportunity.update_lead_qualification_status",
+		"before_save": "stems.stems.custom_scripts.opportunity.opportunity.before_save_opportunity",
 	},
 	"Lead": {
 		"on_update": "stems.stems.custom_scripts.lead.lead.auto_assign_lead",

@@ -56,6 +56,13 @@ def get_opportunity_custom_fields():
 				"insert_after": "sketch_section",
 				"depends_on": "eval:doc.drawing_required",
 			},
-
+			{
+				"fieldname": "opportunity_name",
+				"label": "Opportunity Name",
+				"fieldtype": "Data",
+				"insert_after": "opportunity_from",
+				"is_title_field": 1,
+				"unique": 1,
+			},
 		]
 	}
