@@ -11,38 +11,39 @@ class BillofQuantity(Document):
 
 @frappe.whitelist()
 def make_quotation(source_name, target_doc=None):
-    """Create Quotation from BOQ with custom item rules"""
+	"""Create Quotation from BOQ with custom item rules"""
 
-    def postprocess(source, target):
-        target.quotation_to = "Lead"
-        target.party_name = source.lead
-        target.customer_name = frappe.db.get_value("Lead", source.lead, "lead_name")
-        target.customer_need_profile = source.customer_need_profile
-        target.items = []
-        target.required_items = []
+	def postprocess(source, target):
+		target.quotation_to = "Lead"
+		target.party_name = source.lead
+		target.customer_name = frappe.db.get_value("Lead", source.lead, "lead_name")
+		target.customer_need_profile = source.customer_need_profile
+		target.items = []
+		target.required_items = []
 
-        for row in source.items:
-            row_data = {
-                "item_code": row.item,
-                "item_name": row.item_name,
-                "qty": row.qty,
-                "uom": row.uom,
-                "customer_provided": row.customer_provided
-            }
-            if row.customer_provided:
-                target.append("required_items", row_data)
-            else:
-                target.append("items", row_data)
+		for row in source.items:
+			row_data = {
+				"item_code": row.item,
+				"item_name": row.item_name,
+				"qty": row.qty,
+				"uom": row.uom,
+				"customer_provided": row.customer_provided,
+				"description": row.description,
+			}
+			if row.customer_provided:
+				target.append("required_items", row_data)
+			else:
+				target.append("items", row_data)
 
-    doc = get_mapped_doc(
-        "Bill of Quantity",
-        source_name,
-        {
-            "Bill of Quantity": {
-                "doctype": "Quotation"
-            }
-        },
-        target_doc,
-        postprocess=postprocess
-    )
-    return doc
+	doc = get_mapped_doc(
+		"Bill of Quantity",
+		source_name,
+		{
+			"Bill of Quantity": {
+				"doctype": "Quotation"
+			}
+		},
+		target_doc,
+		postprocess=postprocess
+	)
+	return doc

@@ -261,6 +261,7 @@ def make_boq(source_name, target_doc=None):
 					item.item_name = row.item_name
 					item.qty = row.qty
 					item.uom = row.uom
+					item.description = row.description
 
 	doc = frappe.model.mapper.get_mapped_doc(
 		"Opportunity",
