@@ -187,13 +187,13 @@ def create_site_visit_todo(doc):
 		"doctype": "ToDo",
 		"reference_type": "Opportunity",
 		"reference_name": doc.name,
-		"description": ["like", f"Site Visit - {doc.name}%"]
+		"description": ["like", f"Site Visit - {doc.title}%"]
 	})
 	if existing_todo:
 		return
 
 	todo = frappe.new_doc("ToDo")
-	todo.description = f"Site Visit - {doc.name}"
+	todo.description = f"Site Visit - {doc.title}"
 	todo.reference_type = "Opportunity"
 	todo.reference_name = doc.name
 	todo.allocated_to = user
