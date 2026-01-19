@@ -14,7 +14,9 @@
   "column_break_zbaj",
   "quotation_print_format",
   "enable_opportunity_activity_notification",
-  "event_email_template"
+  "event_email_template",
+  "section_break_vkyi",
+  "default_project_warehouse"
  ],
  "fields": [
   {
@@ -84,13 +86,25 @@
    "fieldname": "enable_quotation_follow_up",
    "fieldtype": "Check",
    "label": "Enable Quotation Follow Up Notification"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_vkyi",
+   "fieldtype": "Section Break",
+   "label": "Configurations"
+  },
+  {
+   "fieldname": "default_project_warehouse",
+   "fieldtype": "Link",
+   "label": "Default Project Warehouse",
+   "options": "Warehouse"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-01-09 16:44:20.046322",
+ "modified": "2026-01-19 09:46:20.762213",
  "modified_by": "Administrator",
  "module": "STEMS",
  "name": "STEMS Settings",
