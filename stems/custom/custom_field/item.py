@@ -10,5 +10,18 @@ def get_item_custom_fields():
 				"insert_after": "has_variants",
 				"label": "Is CNP Item",
 			},
+			{
+				"fieldname": "section_break_template",
+				"fieldtype": "Section Break",
+				"insert_after": "is_fixed_asset",
+				"label": "",
+			},
+			{
+				"fieldname": "task_template",
+				"fieldtype": "Table",
+				"options": "Task Templates",
+				"insert_after": "section_break_template",
+				"label": "Task Templates",
+			}
 		]
 	}
