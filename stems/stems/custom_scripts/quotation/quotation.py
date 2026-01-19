@@ -163,12 +163,15 @@ def follow_up_notification():
 		user = frappe.db.get_value("Employee", q.sales_person, "user_id")
 		if not user:
 			continue
-		message = settings.follow_up_notification_template.format(
-			quotation=q.name
-		)
+		template = frappe.get_doc("Email Template",settings.follow_up_notification_template)
+		context = {
+			"quotation": q.name,
+		}
+		subject = frappe.render_template(template.subject, context)
+		message = frappe.render_template(template.response, context)
 		frappe.get_doc({
 			"doctype": "Notification Log",
-			"subject": "Quotation Follow-up Required",
+			"subject": subject,
 			"email_content": message,
 			"for_user": user,
 			"document_type": "Quotation",
