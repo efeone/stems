@@ -5,6 +5,7 @@ from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 from stems.custom.custom_field.item import get_item_custom_fields
 from stems.custom.custom_field.opportunity import get_opportunity_custom_fields
 from stems.custom.custom_field.quotation import get_quotation_custom_fields
+from stems.custom.custom_field.sales_order import get_sales_order_custom_fields
 
 
 def after_migrate():
@@ -117,6 +118,7 @@ def get_custom_fields():
 	custom_fields = get_item_custom_fields()
 	custom_fields.update(get_opportunity_custom_fields())
 	custom_fields.update(get_quotation_custom_fields())
+	custom_fields.update(get_sales_order_custom_fields())
 	return custom_fields
 
 def get_property_setters():

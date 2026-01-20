@@ -25,6 +25,12 @@ def get_quotation_custom_fields():
 				"label": "Sales Person",
 				"insert_after": "valid_till",
 			},
-			
+			{
+				"fieldname": "bill_of_quantity",
+				"fieldtype": "Link",
+				"options": "Bill of Quantity",
+				"label": "Bill of Quantity",
+				"insert_after": "customer_need_profile",
+			},
 		]
 	}
