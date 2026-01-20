@@ -46,6 +46,7 @@ def _make_sales_order_from_quotation(source_name, target_doc=None, ignore_permis
 			target.customer = customer.name
 			target.customer_name = customer.customer_name
 
+		target.bill_of_quantity = source.bill_of_quantity
 		if source.referral_sales_partner:
 			target.sales_partner = source.referral_sales_partner
 			target.commission_rate = frappe.get_value(

@@ -18,6 +18,7 @@ def make_quotation(source_name, target_doc=None):
 		target.party_name = source.lead
 		target.customer_name = frappe.db.get_value("Lead", source.lead, "lead_name")
 		target.customer_need_profile = source.customer_need_profile
+		target.bill_of_quantity = source.name
 		target.items = []
 		target.required_items = []
 
