@@ -18,3 +18,4 @@ function set_item_code_query(frm) {
 		};
 	});
 }
+

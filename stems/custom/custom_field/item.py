@@ -22,6 +22,6 @@ def get_item_custom_fields():
 				"options": "Task Templates",
 				"insert_after": "section_break_template",
 				"label": "Task Templates",
-			}
+			},
 		]
 	}
