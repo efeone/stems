@@ -48,3 +48,18 @@ def make_quotation(source_name, target_doc=None):
 		postprocess=postprocess
 	)
 	return doc
+
+@frappe.whitelist()
+def get_item_stock_balance(item):
+	"""
+	Fetch the stock balance (actual quantity) of a given item in its default warehouse.
+	"""
+	if not item:
+		return 0
+	item_default = frappe.get_value("Item Default",{"parent":item},["company","default_warehouse"], as_dict = True)
+	if not item_default or not item_default.default_warehouse:
+		return 0
+	warehouse = item_default.default_warehouse
+	actual_qty = frappe.get_value("Bin",{"item_code":item , "warehouse":warehouse},"actual_qty") or 0
+	return actual_qty 
+
