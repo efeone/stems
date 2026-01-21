@@ -163,7 +163,10 @@ doc_events = {
 	},
 	"Quotation": {
 		"on_update": "stems.stems.custom_scripts.quotation.quotation.send_customer_approval_email"
-	}
+	},
+	"Project": {
+		"after_insert": "stems.stems.custom_scripts.project.project.link_project_to_boq",
+	},
 }
 
 # Scheduled Tasks
