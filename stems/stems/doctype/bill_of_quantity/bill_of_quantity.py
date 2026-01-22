@@ -4,6 +4,7 @@
 import frappe
 from frappe.model.document import Document
 from frappe.model.mapper import get_mapped_doc
+from frappe.utils import today
 
 
 class BillofQuantity(Document):
@@ -63,3 +64,49 @@ def get_item_stock_balance(item):
 	actual_qty = frappe.get_value("Bin",{"item_code":item , "warehouse":warehouse},"actual_qty") or 0
 	return actual_qty 
 
+@frappe.whitelist()
+def create_rfq_from_boq(source_name):
+	"""
+		Create Request for Quotation from Bill of Quantity considering stock levels
+	"""
+	boq = frappe.get_doc("Bill of Quantity", source_name)
+
+	rfq = frappe.new_doc("Request for Quotation")
+	rfq.bill_of_quantity = boq.name
+	rfq.transaction_date = frappe.utils.today()
+	rfq.schedule_date = frappe.utils.today()
+
+	for row in boq.items:
+		if not row.item or not row.qty:
+			continue
+
+		if row.customer_provided:
+			continue
+
+		stock_uom = frappe.get_value("Item", row.item, "stock_uom")
+
+		default_warehouse = frappe.get_value(
+			"Item Default",
+			{"parent": row.item},
+			"default_warehouse"
+		)
+
+		if not default_warehouse:
+			frappe.throw(f"Default warehouse not set for Item {row.item}")
+
+		available_qty = get_item_stock_balance(row.item)
+		shortage_qty = max(row.qty - available_qty, 0)
+
+		if shortage_qty > 0:
+			rfq.append("items", {
+				"item_code": row.item,
+				"qty": shortage_qty,
+				"uom": row.uom,
+				"stock_uom": stock_uom,
+				"conversion_factor": 1,
+				"warehouse": default_warehouse,
+				"description": row.description
+			})
+
+	rfq.insert(ignore_permissions=True, ignore_mandatory=True)
+	return rfq.name

@@ -5,6 +5,7 @@ frappe.ui.form.on('Bill of Quantity', {
 	refresh: function(frm) {
 		if (!frm.is_new()) {
 			add_make_quotation_button(frm);
+			add_create_rfq_button(frm);
 		}
 	},
 	after_save: function(frm) {
@@ -100,5 +101,27 @@ function show_additional_stock_message(frm) {
 			indicator: 'orange'
 		});
 	}
+}
+
+/*
+ * Add button to create RFQ from Bill of Quantity
+ */
+function add_create_rfq_button(frm) {
+    // Check if any item has additional quantity needed
+    let has_shortage = frm.doc.items.some(row => row.additional_quantity_needed > 0);
+
+    if (has_shortage) {
+        frm.add_custom_button("Request for Quotation", function() {
+            frappe.call({
+                method: "stems.stems.doctype.bill_of_quantity.bill_of_quantity.create_rfq_from_boq",
+                args: { source_name: frm.doc.name },
+                callback: function(r) {
+                    if (r.message) {
+                        frappe.set_route("Form", "Request for Quotation", r.message);
+                    }
+                }
+            });
+        }, "Create");
+    }
 }
 
