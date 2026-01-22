@@ -9,7 +9,7 @@ def get_sales_order_custom_fields():
 				"fieldtype": "Link",
 				"options": "Bill of Quantity",
 				"label": "Bill of Quantity",
-				"insert_after": "customer_need_profile",
+				"insert_after": "order_type",
 			},
 		]
 	}
