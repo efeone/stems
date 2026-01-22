@@ -11,7 +11,10 @@
   "uom",
   "qty",
   "customer_provided",
-  "item_name"
+  "item_name",
+  "column_break_toiq",
+  "stock_balance",
+  "additional_quantity_needed"
  ],
  "fields": [
   {
@@ -55,13 +58,31 @@
    "fieldtype": "Small Text",
    "in_list_view": 1,
    "label": "Description"
+  },
+  {
+   "fieldname": "stock_balance",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Stock Balance",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_toiq",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "additional_quantity_needed",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Additional Quantity Needed",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-01-14 12:06:40.215779",
+ "modified": "2026-01-21 16:50:03.899849",
  "modified_by": "Administrator",
  "module": "STEMS",
  "name": "Bill of Quantity Item",
