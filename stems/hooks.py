@@ -49,6 +49,7 @@ doctype_js = {
 	"Quotation":"stems/custom_scripts/quotation/quotation.js",
 	"Delivery Note":"stems/custom_scripts/delivery_note/delivery_note.js",
     "Item":"stems/custom_scripts/item/item.js",
+    "Task":"stems/custom_scripts/task/task.js",
 }
 doctype_list_js = {
 	"Lead" : "stems/custom_scripts/lead/lead_list.js"
