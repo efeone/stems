@@ -1,3 +1,5 @@
+// Copyright (c) 2025, efeone and contributors
+// For license information, please see license.txt
 
 frappe.ui.form.on('Task',{
 	is_payment_required: function(frm){

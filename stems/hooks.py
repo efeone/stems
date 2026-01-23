@@ -168,6 +168,9 @@ doc_events = {
 	"Project": {
 		"after_insert": "stems.stems.custom_scripts.project.project.link_project_to_boq",
 	},
+	"Task": {
+		"on_update": "stems.stems.custom_scripts.task.task.payment_requirement_notification",
+	},
 }
 
 # Scheduled Tasks
