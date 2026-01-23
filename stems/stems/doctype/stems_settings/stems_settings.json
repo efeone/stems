@@ -15,6 +15,9 @@
   "quotation_print_format",
   "enable_opportunity_activity_notification",
   "event_email_template",
+  "enable_payment_task_notification",
+  "payment_task_notification_template",
+  "payment_task_notification_role",
   "section_break_vkyi",
   "default_project_warehouse"
  ],
@@ -98,13 +101,35 @@
    "fieldtype": "Link",
    "label": "Default Project Warehouse",
    "options": "Warehouse"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_payment_task_notification",
+   "fieldtype": "Check",
+   "label": "Enable Payment Task Notification"
+  },
+  {
+   "depends_on": "eval:doc.enable_payment_task_notification\n",
+   "description": "Email & notification template used when a payment-required task is completed.",
+   "fieldname": "payment_task_notification_template",
+   "fieldtype": "Link",
+   "label": "Payment Task Notification Template",
+   "options": "Email Template"
+  },
+  {
+   "depends_on": "eval:doc.enable_payment_task_notification\n",
+   "description": "Users with this role will receive email and system notifications.",
+   "fieldname": "payment_task_notification_role",
+   "fieldtype": "Link",
+   "label": "Payment Task Notification Role",
+   "options": "Role"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-01-19 09:46:20.762213",
+ "modified": "2026-01-22 17:12:14.255184",
  "modified_by": "Administrator",
  "module": "STEMS",
  "name": "STEMS Settings",
