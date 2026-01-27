@@ -7,6 +7,7 @@ from stems.custom.custom_field.opportunity import get_opportunity_custom_fields
 from stems.custom.custom_field.quotation import get_quotation_custom_fields
 from stems.custom.custom_field.sales_order import get_sales_order_custom_fields
 from stems.custom.custom_field.task import get_task_custom_fields
+from stems.custom.custom_field.stock_entry import get_stock_entry_custom_fields
 
 
 def after_migrate():
@@ -40,6 +41,8 @@ def delete_custom_fields_for_stems():
 	delete_custom_fields(get_quotation_custom_fields())
 	delete_custom_fields(get_lead_custom_fields())
 	delete_custom_fields(get_task_custom_fields())
+	delete_custom_fields(get_sales_order_custom_fields())
+	delete_custom_fields(get_stock_entry_custom_fields())
 
 def delete_custom_fields(custom_fields: dict):
 	'''
@@ -122,6 +125,7 @@ def get_custom_fields():
 	custom_fields.update(get_quotation_custom_fields())
 	custom_fields.update(get_sales_order_custom_fields())
 	custom_fields.update(get_task_custom_fields())
+	custom_fields.update(get_stock_entry_custom_fields())
 	return custom_fields
 
 def get_property_setters():

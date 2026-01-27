@@ -116,85 +116,64 @@ def create_rfq_from_boq(source_name):
 	return rfq.name
 
 @frappe.whitelist()
-def transfer_stock_to_project(boq_name, items):
-    """
-    	Transfer stock from Item default warehouse to Project warehouse
-    	based on BOQ items. Uses required_qty = qty - transferred_quantity.
-    """
-    boq_doc = frappe.get_doc("Bill of Quantity", boq_name)
+def transfer_stock_to_project(boq_name):
+	"""
+	Create a Draft Stock Entry from BOQ and redirect user.
+	No stock movement or BOQ update happens here.
+	"""
 
-    if not boq_doc.project:
-        frappe.throw(_("Project is not linked to this BOQ"))
+	boq = frappe.get_doc("Bill of Quantity", boq_name)
 
-    items = frappe.parse_json(items)
+	if not boq.project:
+		frappe.throw(_("Project is not linked to this BOQ"))
 
-    company = frappe.db.get_value("Project", boq_doc.project, "company")
-    if not company:
-        frappe.throw(_("Company not found in linked Project"))
+	company = frappe.db.get_value("Project", boq.project, "company")
+	if not company:
+		frappe.throw(_("Company not found in linked Project"))
 
-    project_warehouse = frappe.db.get_single_value("STEMS Settings", "default_project_warehouse")
-    if not project_warehouse:
-        frappe.throw(_("Default Project Warehouse not set in STEMS Settings"))
+	project_warehouse = frappe.db.get_single_value(
+		"STEMS Settings", "default_project_warehouse"
+	)
+	if not project_warehouse:
+		frappe.throw(_("Default Project Warehouse not set in STEMS Settings"))
 
-    stock_entry = frappe.get_doc({
-        "doctype": "Stock Entry",
-        "stock_entry_type": "Material Transfer",
-        "company": company,
-        "items": []
-    })
+	stock_entry = frappe.get_doc({
+		"doctype": "Stock Entry",
+		"stock_entry_type": "Material Transfer",
+		"company": company,
+		"boq_reference": boq.name,
+		"items": []
+	})
 
-    transferred_any_item = False
+	for row in boq.items:
+		if row.customer_provided:
+			continue
 
-    for transfer_row in items:
-        item_code = transfer_row.get("item_code")
-        transfer_qty = flt(transfer_row.get("qty"))
+		required_qty = flt(row.qty) - flt(row.transferred_quantity or 0)
+		if required_qty <= 0:
+			continue
 
-        if not item_code or transfer_qty <= 0:
-            continue
+		from_warehouse = frappe.db.get_value(
+			"Item Default",
+			{"parent": row.item, "company": company},
+			"default_warehouse"
+		)
 
-        boq_item = next((row for row in boq_doc.items if row.item == item_code), None)
-        if not boq_item:
-            frappe.throw(_("Item {0} not found in BOQ").format(item_code))
+		if not from_warehouse:
+			frappe.throw(
+				_("Default Warehouse not set for Item {0}").format(row.item)
+			)
 
-        required_qty = flt(boq_item.qty) - flt(boq_item.transferred_quantity or 0)
-        if required_qty <= 0:
-            continue
+		stock_entry.append("items", {
+			"item_code": row.item,
+			"qty": required_qty,
+			"s_warehouse": from_warehouse,
+			"t_warehouse": project_warehouse
+		})
 
-        if transfer_qty > required_qty:
-            frappe.throw(
-                _("Cannot transfer more than required quantity for item {0}. Required: {1}")
-                .format(item_code, required_qty)
-            )
+	if not stock_entry.items:
+		frappe.throw(_("All items are already transferred"))
 
-        from_warehouse = frappe.db.get_value(
-            "Item Default",
-            {"parent": item_code, "company": company},
-            "default_warehouse"
-        )
-        if not from_warehouse:
-            frappe.throw(
-                _("Default Warehouse not set for Item {0} in Company {1}")
-                .format(item_code, company)
-            )
+	stock_entry.insert()
+	return stock_entry.name
 
-        stock_entry.append("items", {
-            "item_code": item_code,
-            "qty": transfer_qty,
-            "s_warehouse": from_warehouse,
-            "t_warehouse": project_warehouse
-        })
-
-        boq_item.transferred_quantity = flt(boq_item.transferred_quantity or 0) + transfer_qty
-        transferred_any_item = True
-
-    if not transferred_any_item:
-        frappe.msgprint(_("All items are already transferred"))
-        return
-
-    stock_entry.insert()
-    stock_entry.submit()
-    boq_doc.save()
-
-    frappe.msgprint(
-    _('Stock successfully transferred to Project Warehouse.<br>'
-      'Stock Entry: <a href="{0}">{1}</a>').format(get_url_to_form(stock_entry.doctype, stock_entry.name),stock_entry.name),alert=True,indicator='green')

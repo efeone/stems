@@ -171,6 +171,10 @@ doc_events = {
 	"Task": {
 		"on_update": "stems.stems.custom_scripts.task.task.payment_requirement_notification",
 	},
+	"Stock Entry": {
+		"validate": "stems.stems.custom_scripts.stock_entry.stock_entry.validate_stock_entry_qty",
+		"on_submit": "stems.stems.custom_scripts.stock_entry.stock_entry.update_boq_transferred_qty",
+	},
 }
 
 # Scheduled Tasks
