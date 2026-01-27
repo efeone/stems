@@ -5,6 +5,10 @@ import frappe
 from frappe.model.document import Document
 from frappe.model.mapper import get_mapped_doc
 from frappe.utils import today
+from frappe import _
+from frappe.utils.data import flt
+from frappe.utils import get_url_to_form
+
 
 
 class BillofQuantity(Document):
@@ -110,3 +114,87 @@ def create_rfq_from_boq(source_name):
 
 	rfq.insert(ignore_permissions=True, ignore_mandatory=True)
 	return rfq.name
+
+@frappe.whitelist()
+def transfer_stock_to_project(boq_name, items):
+    """
+    	Transfer stock from Item default warehouse to Project warehouse
+    	based on BOQ items. Uses required_qty = qty - transferred_quantity.
+    """
+    boq_doc = frappe.get_doc("Bill of Quantity", boq_name)
+
+    if not boq_doc.project:
+        frappe.throw(_("Project is not linked to this BOQ"))
+
+    items = frappe.parse_json(items)
+
+    company = frappe.db.get_value("Project", boq_doc.project, "company")
+    if not company:
+        frappe.throw(_("Company not found in linked Project"))
+
+    project_warehouse = frappe.db.get_single_value("STEMS Settings", "default_project_warehouse")
+    if not project_warehouse:
+        frappe.throw(_("Default Project Warehouse not set in STEMS Settings"))
+
+    stock_entry = frappe.get_doc({
+        "doctype": "Stock Entry",
+        "stock_entry_type": "Material Transfer",
+        "company": company,
+        "items": []
+    })
+
+    transferred_any_item = False
+
+    for transfer_row in items:
+        item_code = transfer_row.get("item_code")
+        transfer_qty = flt(transfer_row.get("qty"))
+
+        if not item_code or transfer_qty <= 0:
+            continue
+
+        boq_item = next((row for row in boq_doc.items if row.item == item_code), None)
+        if not boq_item:
+            frappe.throw(_("Item {0} not found in BOQ").format(item_code))
+
+        required_qty = flt(boq_item.qty) - flt(boq_item.transferred_quantity or 0)
+        if required_qty <= 0:
+            continue
+
+        if transfer_qty > required_qty:
+            frappe.throw(
+                _("Cannot transfer more than required quantity for item {0}. Required: {1}")
+                .format(item_code, required_qty)
+            )
+
+        from_warehouse = frappe.db.get_value(
+            "Item Default",
+            {"parent": item_code, "company": company},
+            "default_warehouse"
+        )
+        if not from_warehouse:
+            frappe.throw(
+                _("Default Warehouse not set for Item {0} in Company {1}")
+                .format(item_code, company)
+            )
+
+        stock_entry.append("items", {
+            "item_code": item_code,
+            "qty": transfer_qty,
+            "s_warehouse": from_warehouse,
+            "t_warehouse": project_warehouse
+        })
+
+        boq_item.transferred_quantity = flt(boq_item.transferred_quantity or 0) + transfer_qty
+        transferred_any_item = True
+
+    if not transferred_any_item:
+        frappe.msgprint(_("All items are already transferred"))
+        return
+
+    stock_entry.insert()
+    stock_entry.submit()
+    boq_doc.save()
+
+    frappe.msgprint(
+    _('Stock successfully transferred to Project Warehouse.<br>'
+      'Stock Entry: <a href="{0}">{1}</a>').format(get_url_to_form(stock_entry.doctype, stock_entry.name),stock_entry.name),alert=True,indicator='green')
