@@ -85,8 +85,13 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
- "links": [],
- "modified": "2026-01-23 15:23:23.874109",
+ "links": [
+  {
+   "link_doctype": "Stock Entry",
+   "link_fieldname": "boq_reference"
+  }
+ ],
+ "modified": "2026-01-27 16:22:23.449491",
  "modified_by": "Administrator",
  "module": "STEMS",
  "name": "Bill of Quantity",
