@@ -118,8 +118,8 @@ def create_rfq_from_boq(source_name):
 @frappe.whitelist()
 def transfer_stock_to_project(boq_name):
 	"""
-	Create a Draft Stock Entry from BOQ and redirect user.
-	No stock movement or BOQ update happens here.
+	Create a Draft Stock Entry from BOQ
+	Qty fetched will never exceed available stock
 	"""
 
 	boq = frappe.get_doc("Bill of Quantity", boq_name)
@@ -164,16 +164,26 @@ def transfer_stock_to_project(boq_name):
 				_("Default Warehouse not set for Item {0}").format(row.item)
 			)
 
+		available_qty = frappe.db.get_value(
+			"Bin",
+			{"item_code": row.item, "warehouse": from_warehouse},
+			"actual_qty"
+		) or 0
+
+		transfer_qty = min(required_qty, available_qty)
+
+		if transfer_qty <= 0:
+			continue
+
 		stock_entry.append("items", {
 			"item_code": row.item,
-			"qty": required_qty,
+			"qty": transfer_qty,
 			"s_warehouse": from_warehouse,
 			"t_warehouse": project_warehouse
 		})
 
 	if not stock_entry.items:
-		frappe.throw(_("All items are already transferred"))
+		frappe.throw(_("No stock available to transfer"))
 
 	stock_entry.insert()
 	return stock_entry.name
-
