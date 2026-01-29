@@ -170,7 +170,10 @@ doc_events = {
 		"after_insert": "stems.stems.custom_scripts.project.project.link_project_to_boq",
 	},
 	"Task": {
-		"on_update": "stems.stems.custom_scripts.task.task.payment_requirement_notification",
+		"on_update": [
+			"stems.stems.custom_scripts.task.task.payment_requirement_notification",
+			"stems.stems.custom_scripts.task.task.sync_task_payment_to_sales_order"
+		],
 	},
 	"Stock Entry": {
 		"validate": "stems.stems.custom_scripts.stock_entry.stock_entry.validate_stock_entry_qty",
