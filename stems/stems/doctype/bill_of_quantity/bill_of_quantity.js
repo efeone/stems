@@ -16,7 +16,7 @@ frappe.ui.form.on('Bill of Quantity', {
 	},
 	onload : function(frm) {
 		frm.doc.items.forEach(function(row, index) {
-				stock_balance_fetch(frm, 'Bill of Quantity Item', row.name);
+			stock_balance_fetch(frm, 'Bill of Quantity Item', row.name);
 		});
 	}
 });
@@ -52,38 +52,63 @@ frappe.ui.form.on('Bill of Quantity Item', {
 });
 
 /**
-* Fetch stock balance for the selected item and update the child table row
-* If customer_provided is checked, skip stock balance calculation
+* Check if item is a stock item before fetching stock balance
+*/
+function check_and_fetch_stock_balance(frm, cdt, cdn) {
+	let row = locals[cdt][cdn];
+	if (!row.item) return;
+
+	frappe.db.get_value('Item', row.item, 'is_stock_item', (r) => {
+		if (r && r.is_stock_item) {
+			stock_balance_fetch(frm, cdt, cdn);
+		} else {
+			row.stock_balance = 0;
+			row.additional_quantity_needed = 0;
+			row.transferred_quantity = 0;
+			frm.refresh_field("items");
+		}
+	});
+}
+
+/**
+* Fetch stock balance for stock items
 */
 function stock_balance_fetch(frm, cdt, cdn) {
-	let row = locals[cdt][cdn];  
-	if (!row.item) return; 
+	let row = locals[cdt][cdn];
+	if (!row.item) return;
+
 	frappe.call({
 		method: "stems.stems.doctype.bill_of_quantity.bill_of_quantity.get_item_stock_balance",
 		args: { item: row.item },
 		callback: function(r) {
 			row.stock_balance = r.message || 0;
 			calculate_additional_qty(frm, cdt, cdn);
-			frm.refresh_field("items"); 
+			frm.refresh_field("items");
 		}
 	});
-
 }
 
 /**
-* Calculate additional quantity needed based on stock balance and qty
-* Skip if customer_provided is checked
+* Calculate additional quantity needed
 */
 function calculate_additional_qty(frm, cdt, cdn) {
 	let row = locals[cdt][cdn];
-	if  (!row.qty || row.customer_provided) {
+
+	if (!row.item) {
 		row.additional_quantity_needed = 0;
 		frm.refresh_field("items");
 		return;
 	}
-	let additional_quantity_needed = row.qty - (row.stock_balance || 0);
-	row.additional_quantity_needed = additional_quantity_needed > 0 ? additional_quantity_needed : 0;
-	frm.refresh_field("items");
+
+	frappe.db.get_value('Item', row.item, 'is_stock_item', (r) => {
+		if (!r || !r.is_stock_item || !row.qty || row.customer_provided) {
+			row.additional_quantity_needed = 0;
+		} else {
+			let shortage = row.qty - (row.stock_balance || 0);
+			row.additional_quantity_needed = shortage > 0 ? shortage : 0;
+		}
+		frm.refresh_field("items");
+	});
 }
 
 /**
@@ -107,63 +132,100 @@ function show_additional_stock_message(frm) {
 }
 
 /*
- * Add button to create RFQ from Bill of Quantity
- */
+* Add button to create RFQ from Bill of Quantity
+* Only show if there are stock items with shortage
+*/
 function add_create_rfq_button(frm) {
-    // Check if any item has additional quantity needed
-    let has_shortage = frm.doc.items.some(row => row.additional_quantity_needed > 0);
+	let has_shortage = false;
 
-    if (has_shortage) {
-        frm.add_custom_button("Request for Quotation", function() {
-            frappe.call({
-                method: "stems.stems.doctype.bill_of_quantity.bill_of_quantity.create_rfq_from_boq",
-                args: { source_name: frm.doc.name },
-                callback: function(r) {
-                    if (r.message) {
-                        frappe.set_route("Form", "Request for Quotation", r.message);
-                    }
-                }
-            });
-        }, "Create");
-    }
+	(frm.doc.items || []).forEach(row => {
+		if (row.additional_quantity_needed > 0) {
+			has_shortage = true;
+		}
+	});
+
+	if (has_shortage) {
+		frm.add_custom_button("Request for Quotation", function() {
+			frappe.call({
+				method: "stems.stems.doctype.bill_of_quantity.bill_of_quantity.create_rfq_from_boq",
+				args: { source_name: frm.doc.name },
+				callback: function(r) {
+					if (r.message) {
+						frappe.set_route("Form", "Request for Quotation", r.message);
+					}
+				}
+			});
+		}, "Create");
+	}
 }
 
 /*
- * Add button to transfer stock to Project Warehouse
- */
+* Add button to transfer stock to Project Warehouse
+*/
 function add_transfer_stock_button(frm) {
-	frm.add_custom_button(__('Transfer Stock to Project'), function () {
-		transfer_stock_to_project(frm);
+	let has_items_to_transfer = false;
+
+	(frm.doc.items || []).forEach(row => {
+		let required_qty = (row.qty || 0) - (row.transferred_quantity || 0);
+		if (!row.customer_provided && required_qty > 0) {
+			has_items_to_transfer = true;
+		}
 	});
+
+	if (has_items_to_transfer) {
+		frm.add_custom_button(__('Transfer Stock to Project'), function() {
+			transfer_stock_to_project(frm);
+		});
+	}
 }
 
 /**
- * Create Draft Stock Entry and redirect user
- */
+* Create Draft Stock Entry and redirect user
+* Only transfers stock items
+*/
 function transfer_stock_to_project(frm) {
-	// Check if there is anything left to transfer
-	let has_items_to_transfer = (frm.doc.items || []).some(row => {
+	let items_to_check = [];
+
+	(frm.doc.items || []).forEach(row => {
 		let required_qty = (row.qty || 0) - (row.transferred_quantity || 0);
-		return !row.customer_provided && required_qty > 0;
+		if (!row.customer_provided && required_qty > 0 && row.item) {
+			items_to_check.push(row.item);
+		}
 	});
 
-	if (!has_items_to_transfer) {
+	if (items_to_check.length === 0) {
 		frappe.msgprint(__('All items are already transferred or customer-provided.'));
 		return;
 	}
 
-	frappe.call({
-		method: "stems.stems.doctype.bill_of_quantity.bill_of_quantity.transfer_stock_to_project",
-		args: {
-			boq_name: frm.doc.name
-		},
-		freeze: true,
-		freeze_message: __('Creating Stock Entry...'),
-		callback(r) {
-			if (r.message) {
-				// Redirect to Draft Stock Entry
-				frappe.set_route("Form", "Stock Entry", r.message);
+	let stock_items_found = 0;
+	let checks_completed = 0;
+
+	items_to_check.forEach(item => {
+		frappe.db.get_value('Item', item, 'is_stock_item', (r) => {
+			checks_completed++;
+			if (r && r.is_stock_item) {
+				stock_items_found++;
 			}
-		}
+
+			if (checks_completed === items_to_check.length) {
+				if (stock_items_found === 0) {
+					frappe.msgprint(__('No stock items available to transfer.'));
+					return;
+				}
+
+				frappe.call({
+					method: "stems.stems.doctype.bill_of_quantity.bill_of_quantity.transfer_stock_to_project",
+					args: { boq_name: frm.doc.name },
+					freeze: true,
+					freeze_message: __('Creating Stock Entry...'),
+					callback(r) {
+						if (r.message) {
+							frappe.set_route("Form", "Stock Entry", r.message);
+						}
+					}
+				});
+			}
+		});
 	});
 }

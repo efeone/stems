@@ -9,8 +9,6 @@ from frappe import _
 from frappe.utils.data import flt
 from frappe.utils import get_url_to_form
 
-
-
 class BillofQuantity(Document):
 	pass
 
@@ -58,9 +56,15 @@ def make_quotation(source_name, target_doc=None):
 def get_item_stock_balance(item):
 	"""
 	Fetch the stock balance (actual quantity) of a given item in its default warehouse.
+	Only for stock items.
 	"""
 	if not item:
 		return 0
+
+	is_stock_item = frappe.db.get_value("Item", item, "is_stock_item")
+	if not is_stock_item:
+		return 0
+
 	item_default = frappe.get_value("Item Default",{"parent":item},["company","default_warehouse"], as_dict = True)
 	if not item_default or not item_default.default_warehouse:
 		return 0
@@ -72,6 +76,7 @@ def get_item_stock_balance(item):
 def create_rfq_from_boq(source_name):
 	"""
 		Create Request for Quotation from Bill of Quantity considering stock levels
+		Only for stock items
 	"""
 	boq = frappe.get_doc("Bill of Quantity", source_name)
 
@@ -85,6 +90,10 @@ def create_rfq_from_boq(source_name):
 			continue
 
 		if row.customer_provided:
+			continue
+
+		is_stock_item = frappe.db.get_value("Item", row.item, "is_stock_item")
+		if not is_stock_item:
 			continue
 
 		stock_uom = frappe.get_value("Item", row.item, "stock_uom")
@@ -120,6 +129,7 @@ def transfer_stock_to_project(boq_name):
 	"""
 	Create a Draft Stock Entry from BOQ
 	Qty fetched will never exceed available stock
+	Only for stock items
 	"""
 
 	boq = frappe.get_doc("Bill of Quantity", boq_name)
@@ -147,6 +157,10 @@ def transfer_stock_to_project(boq_name):
 
 	for row in boq.items:
 		if row.customer_provided:
+			continue
+
+		is_stock_item = frappe.db.get_value("Item", row.item, "is_stock_item")
+		if not is_stock_item:
 			continue
 
 		required_qty = flt(row.qty) - flt(row.transferred_quantity or 0)
@@ -183,7 +197,8 @@ def transfer_stock_to_project(boq_name):
 		})
 
 	if not stock_entry.items:
-		frappe.throw(_("No stock available to transfer"))
+		frappe.throw(_("No stock items available to transfer"))
 
 	stock_entry.insert()
 	return stock_entry.name
+
