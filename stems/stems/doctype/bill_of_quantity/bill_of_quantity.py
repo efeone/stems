@@ -9,8 +9,6 @@ from frappe import _
 from frappe.utils.data import flt
 from frappe.utils import get_url_to_form
 
-
-
 class BillofQuantity(Document):
 	pass
 
@@ -58,9 +56,15 @@ def make_quotation(source_name, target_doc=None):
 def get_item_stock_balance(item):
 	"""
 	Fetch the stock balance (actual quantity) of a given item in its default warehouse.
+	Only for stock items.
 	"""
 	if not item:
 		return 0
+
+	is_stock_item = frappe.db.get_value("Item", item, "is_stock_item")
+	if not is_stock_item:
+		return 0
+
 	item_default = frappe.get_value("Item Default",{"parent":item},["company","default_warehouse"], as_dict = True)
 	if not item_default or not item_default.default_warehouse:
 		return 0
@@ -72,6 +76,7 @@ def get_item_stock_balance(item):
 def create_rfq_from_boq(source_name):
 	"""
 		Create Request for Quotation from Bill of Quantity considering stock levels
+		Only for stock items
 	"""
 	boq = frappe.get_doc("Bill of Quantity", source_name)
 
@@ -85,6 +90,10 @@ def create_rfq_from_boq(source_name):
 			continue
 
 		if row.customer_provided:
+			continue
+
+		is_stock_item = frappe.db.get_value("Item", row.item, "is_stock_item")
+		if not is_stock_item:
 			continue
 
 		stock_uom = frappe.get_value("Item", row.item, "stock_uom")
@@ -118,8 +127,9 @@ def create_rfq_from_boq(source_name):
 @frappe.whitelist()
 def transfer_stock_to_project(boq_name):
 	"""
-	Create a Draft Stock Entry from BOQ and redirect user.
-	No stock movement or BOQ update happens here.
+	Create a Draft Stock Entry from BOQ
+	Qty fetched will never exceed available stock
+	Only for stock items
 	"""
 
 	boq = frappe.get_doc("Bill of Quantity", boq_name)
@@ -149,6 +159,10 @@ def transfer_stock_to_project(boq_name):
 		if row.customer_provided:
 			continue
 
+		is_stock_item = frappe.db.get_value("Item", row.item, "is_stock_item")
+		if not is_stock_item:
+			continue
+
 		required_qty = flt(row.qty) - flt(row.transferred_quantity or 0)
 		if required_qty <= 0:
 			continue
@@ -164,15 +178,26 @@ def transfer_stock_to_project(boq_name):
 				_("Default Warehouse not set for Item {0}").format(row.item)
 			)
 
+		available_qty = frappe.db.get_value(
+			"Bin",
+			{"item_code": row.item, "warehouse": from_warehouse},
+			"actual_qty"
+		) or 0
+
+		transfer_qty = min(required_qty, available_qty)
+
+		if transfer_qty <= 0:
+			continue
+
 		stock_entry.append("items", {
 			"item_code": row.item,
-			"qty": required_qty,
+			"qty": transfer_qty,
 			"s_warehouse": from_warehouse,
 			"t_warehouse": project_warehouse
 		})
 
 	if not stock_entry.items:
-		frappe.throw(_("All items are already transferred"))
+		frappe.throw(_("No stock items available to transfer"))
 
 	stock_entry.insert()
 	return stock_entry.name
