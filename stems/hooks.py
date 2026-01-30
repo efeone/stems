@@ -50,6 +50,7 @@ doctype_js = {
 	"Delivery Note":"stems/custom_scripts/delivery_note/delivery_note.js",
     "Item":"stems/custom_scripts/item/item.js",
     "Task":"stems/custom_scripts/task/task.js",
+	"Sales Order":"stems/custom_scripts/sales_order/sales_order.js",
 }
 doctype_list_js = {
 	"Lead" : "stems/custom_scripts/lead/lead_list.js"
@@ -174,6 +175,9 @@ doc_events = {
 	"Stock Entry": {
 		"validate": "stems.stems.custom_scripts.stock_entry.stock_entry.validate_stock_entry_qty",
 		"on_submit": "stems.stems.custom_scripts.stock_entry.stock_entry.update_boq_transferred_qty",
+	},
+	"Sales Order": {
+		"on_submit": "stems.stems.custom_scripts.sales_order.sales_order.create_project_from_sales_order",
 	},
 }
 
