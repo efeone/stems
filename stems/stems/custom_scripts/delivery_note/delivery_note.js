@@ -1,4 +1,7 @@
 frappe.ui.form.on('Delivery Note', {
+	refresh(frm) {
+		set_source_warehouse(frm);
+	},
 	project (frm) {
 		set_source_warehouse(frm);
 	}
