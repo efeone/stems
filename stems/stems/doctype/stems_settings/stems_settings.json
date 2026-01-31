@@ -11,8 +11,6 @@
   "enable_quotation_follow_up",
   "follow_up_notification_template",
   "follow_up_days",
-  "enable_sales_order_notification",
-  "project_assignment_notification",
   "column_break_zbaj",
   "quotation_print_format",
   "enable_opportunity_activity_notification",
@@ -125,27 +123,13 @@
    "fieldtype": "Link",
    "label": "Payment Task Notification Role",
    "options": "Role"
-  },
-  {
-   "default": "0",
-   "fieldname": "enable_sales_order_notification",
-   "fieldtype": "Check",
-   "label": "Enable Sales Order Notification"
-  },
-  {
-   "depends_on": "eval:doc.enable_sales_order_notification",
-   "description": "Template used to notify when a project is assigned to an employee group.",
-   "fieldname": "project_assignment_notification",
-   "fieldtype": "Link",
-   "label": "Project Assignment Notification",
-   "options": "Email Template"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-01-30 10:20:39.997567",
+ "modified": "2026-01-31 12:20:58.618243",
  "modified_by": "Administrator",
  "module": "STEMS",
  "name": "STEMS Settings",
