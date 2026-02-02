@@ -4,6 +4,8 @@ frappe.ui.form.on('Sales Order', {
 	},
 	refresh: function(frm) {
 		calculate_item_delivery_dates(frm);
+		allow_task_table_edit_after_submit(frm);
+
 	}
 });
 
@@ -16,6 +18,15 @@ frappe.ui.form.on('Sales Order Item', {
 	},
 	items_remove: function(frm) {
 		calculate_item_delivery_dates(frm);
+	}
+});
+
+frappe.ui.form.on("Task Wise Pay", {
+	item(frm, cdt, cdn) {
+		fetch_item_description(cdt, cdn);
+	},
+	percentage(frm, cdt, cdn) {
+		recalculate_task_amount(frm, cdt, cdn);
 	}
 });
 
@@ -67,4 +78,42 @@ function calculate_item_delivery_dates(frm) {
 			frm.set_value("delivery_date", parent_latest_date);
 		}
 	});
+}
+
+/**
+* Allow editing Task Wise Pay child table after submit
+*/
+function allow_task_table_edit_after_submit(frm) {
+	if (frm.doc.docstatus === 1) {
+		frm.set_df_property("task_wise_pay", "cannot_delete_rows", false);
+	}
+}
+
+/**
+ * Fetch item description from Item master
+ */
+function fetch_item_description(cdt, cdn) {
+	let row = locals[cdt][cdn];
+	if (!row.item) return;
+
+	frappe.model.with_doc("Item", row.item, function () {
+		let item_doc = frappe.get_doc("Item", row.item);
+		frappe.model.set_value(
+			cdt,
+			cdn,
+			"item_description",
+			item_doc.item_name || item_doc.description || ""
+		);
+	});
+}
+
+/**
+ * Recalculate amount based on percentage
+ */
+function recalculate_task_amount(frm, cdt, cdn) {
+	let row = locals[cdt][cdn];
+	let total = frm.doc.grand_total || 0;
+	let percentage = row.percentage || 0;
+
+	frappe.model.set_value(cdt,cdn,"amount",(total * percentage) / 100);
 }

@@ -36,6 +36,21 @@ def get_sales_order_custom_fields():
 				"label": "Project Name",
 				"insert_after": "column_break_project",
 			},
+			{
+				"fieldname": "task_wise_payment_summary",
+				"fieldtype": "Section Break",
+				"label": "Task Wise Payment Summary",
+				"insert_after": "project",
+				"collapsible": 1,
+			},
+			{
+				"fieldname": "task_wise_pay",
+				"fieldtype": "Table",
+				"label": "Task Wise Pay",
+				"options": "Task Wise Pay",
+				"allow_on_submit": 1,
+				"insert_after": "task_wise_payment_summary",
+			},
 		]
 	}
 
