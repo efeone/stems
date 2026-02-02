@@ -7,7 +7,7 @@ frappe.ui.form.on('Bill of Quantity', {
 			add_make_quotation_button(frm);
 			add_create_rfq_button(frm);
 		}
-        if (frm.doc.project && frm.doc.docstatus === 1) {
+		if (frm.doc.project && frm.doc.docstatus === 1) {
 			add_transfer_stock_button(frm);
 		}
 	},
@@ -101,10 +101,18 @@ function calculate_additional_qty(frm, cdt, cdn) {
 	}
 
 	frappe.db.get_value('Item', row.item, 'is_stock_item', (r) => {
+
 		if (!r || !r.is_stock_item || !row.qty || row.customer_provided) {
 			row.additional_quantity_needed = 0;
 		} else {
-			let shortage = row.qty - (row.stock_balance || 0);
+
+			let qty = row.qty || 0;
+			let transferred_qty = row.transferred_quantity || 0;
+			let stock_balance = row.stock_balance || 0;
+
+			let remaining_qty = qty - transferred_qty;
+			if (remaining_qty < 0) remaining_qty = 0;
+			let shortage = remaining_qty - stock_balance;
 			row.additional_quantity_needed = shortage > 0 ? shortage : 0;
 		}
 		frm.refresh_field("items");
