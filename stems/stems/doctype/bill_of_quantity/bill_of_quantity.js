@@ -15,6 +15,7 @@ frappe.ui.form.on('Bill of Quantity', {
 		show_additional_stock_message(frm);
 	},
 	onload : function(frm) {
+		if (frm.doc.docstatus === 1) return;
 		frm.doc.items.forEach(function(row, index) {
 			stock_balance_fetch(frm, 'Bill of Quantity Item', row.name);
 		});
@@ -35,6 +36,7 @@ function add_make_quotation_button(frm) {
 
 frappe.ui.form.on('Bill of Quantity Item', {
 	item: function(frm, cdt, cdn) {
+		if (frm.doc.docstatus === 1) return;
 		stock_balance_fetch(frm, cdt, cdn);
 	},
 	qty: function(frm, cdt, cdn) {   
