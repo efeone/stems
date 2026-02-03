@@ -177,7 +177,10 @@ doc_events = {
 	},
 	"Stock Entry": {
 		"validate": "stems.stems.custom_scripts.stock_entry.stock_entry.validate_stock_entry_qty",
-		"on_submit": "stems.stems.custom_scripts.stock_entry.stock_entry.update_boq_transferred_qty",
+		"on_submit": [
+			"stems.stems.custom_scripts.stock_entry.stock_entry.update_boq_transferred_qty",
+			"stems.stems.custom_scripts.stock_entry.stock_entry.freeze_stock_balance_when_completed",
+		],
 	},
 	"Sales Order": {
 		"on_submit": "stems.stems.custom_scripts.sales_order.sales_order.create_project_from_sales_order",
