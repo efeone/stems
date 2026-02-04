@@ -34,15 +34,66 @@ def validate_stock_entry_qty(doc, method):
 
 def update_boq_transferred_qty(doc, method):
 	"""
-		Update the transferred quantity in BOQ items after Stock Entry submission.
+	Update transferred qty in BOQ, but do NOT allow exceeding qty.
 	"""
 	if doc.stock_entry_type != "Material Transfer":
 		return
 
 	for item in doc.items:
-		frappe.db.sql("""
-			UPDATE `tabBill of Quantity Item`
-			SET transferred_quantity = IFNULL(transferred_quantity, 0) + %s
-			WHERE item = %s
-		""", (item.qty, item.item_code))
+		boq_item = frappe.db.get_value(
+			"Bill of Quantity Item",
+			{"item": item.item_code},
+			["name", "qty", "transferred_quantity"],
+			as_dict=True
+		)
 
+		if not boq_item:
+			continue
+
+		existing = boq_item.transferred_quantity or 0
+		new_total = existing + item.qty
+
+		if new_total > boq_item.qty:
+			new_total = boq_item.qty
+
+		frappe.db.set_value(
+			"Bill of Quantity Item",
+			boq_item.name,
+			"transferred_quantity",
+			new_total
+		)
+
+def freeze_stock_balance_when_completed(doc, method):
+	"""
+	Freeze stock_balance only when transferred_quantity == qty.
+	Material Receipt should not modify stock_balance.
+	"""
+	if doc.stock_entry_type != "Material Transfer":
+		return
+
+	for item in doc.items:
+		boq_item = frappe.db.get_value(
+			"Bill of Quantity Item",
+			{"item": item.item_code},
+			["name", "qty", "transferred_quantity", "stock_balance"],
+			as_dict=True
+		)
+
+		if not boq_item:
+			continue
+
+		if boq_item.transferred_quantity == boq_item.qty:
+			current_stock = frappe.db.get_value(
+				"Bin",
+				{"item_code": item.item_code, "warehouse": item.s_warehouse},
+				"actual_qty"
+			) or 0
+
+			new_balance = current_stock
+
+			frappe.db.set_value(
+				"Bill of Quantity Item",
+				boq_item.name,
+				"stock_balance",
+				new_balance
+			)
