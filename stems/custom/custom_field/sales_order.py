@@ -37,6 +37,19 @@ def get_sales_order_custom_fields():
 				"insert_after": "column_break_project",
 			},
 			{
+				"fieldname": "enable_percentage_invoicing",
+				"fieldtype": "Check",
+				"label": "Enable Percentage-Based Invoicing",
+				"insert_after": "project_name",
+				"description": "When checked, Create Sales Invoice opens a popup to enter % and select items (partial invoicing).",
+			},
+			{
+				"fieldname": "percentage_invoicing_status",
+				"fieldtype": "HTML",
+				"label": "",
+				"insert_after": "enable_percentage_invoicing",
+			},
+			{
 				"fieldname": "task_wise_payment_summary",
 				"fieldtype": "Section Break",
 				"label": "Task Wise Payment Summary",

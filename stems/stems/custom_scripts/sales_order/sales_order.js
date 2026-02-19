@@ -6,6 +6,15 @@ frappe.ui.form.on('Sales Order', {
 		calculate_item_delivery_dates(frm);
 		allow_task_table_edit_after_submit(frm);
 
+        if (!frm.doc.enable_percentage_invoicing) return;
+		if (frm.doc.docstatus !== 1) return;
+
+		// Remove default Create Invoice button
+		frm.remove_custom_button(__('Sales Invoice'), __('Create'));
+
+		frm.add_custom_button(__('Sales Invoice'), function () {
+			open_percentage_dialog(frm);
+		}, __('Create'));
 	}
 });
 
@@ -117,3 +126,100 @@ function recalculate_task_amount(frm, cdt, cdn) {
 
 	frappe.model.set_value(cdt,cdn,"amount",(total * percentage) / 100);
 }
+
+
+
+// ========================= Percentage Invoicing Logic =========================
+function open_percentage_dialog(frm) {
+
+	let remaining = 100 - flt(frm.doc.per_billed || 0);
+
+	if (remaining <= 0) {
+		frappe.msgprint("Sales Order already fully invoiced.");
+		return;
+	}
+
+	frappe.call({
+		method: "stems.stems.custom_scripts.sales_order.percentage_invoicing.get_so_items",
+		args: { sales_order: frm.doc.name },
+		callback: function (r) {
+
+			let items = r.message || [];
+
+			let d = new frappe.ui.Dialog({
+				title: "Create Percentage Invoice",
+				size: "large",
+				fields: [
+
+					{
+						fieldname: "percentage",
+						fieldtype: "Float",
+						label: "Invoice Percentage",
+						reqd: 1,
+						default: remaining
+					},
+
+					{
+						fieldname: "items",
+						fieldtype: "Table",
+						label: "Items",
+						in_place_edit: true,
+						data: items,
+						fields: [
+                                    { fieldname: "include", fieldtype: "Check", label: "Include", in_list_view: 1 },
+                                    { fieldname: "so_detail", fieldtype: "Data", hidden: 1 },
+
+                                    { fieldname: "item_code", fieldtype: "Data", label: "Item", in_list_view: 1, read_only: 1 },
+
+                                    { fieldname: "qty", fieldtype: "Float", label: "Total Qty", in_list_view: 1, read_only: 1 },
+                                    { fieldname: "billed_qty", fieldtype: "Float", label: "Billed Qty", in_list_view: 1, read_only: 1 },
+                                    { fieldname: "remaining_qty", fieldtype: "Float", label: "Remaining Qty", in_list_view: 1, read_only: 1 },
+
+                                    { fieldname: "remaining_percentage", fieldtype: "Float", label: "Remaining %", in_list_view: 1, read_only: 1 },
+
+                                    { fieldname: "rate", fieldtype: "Currency", label: "Rate", in_list_view: 1, read_only: 1 }
+                                ]
+					}
+				],
+
+				primary_action_label: "Create Invoice",
+
+				primary_action(values) {
+
+					let pct = flt(values.percentage);
+
+					if (!(pct > 0 && pct <= 100)) {
+						frappe.msgprint("Enter percentage between 1 and 100.");
+						return;
+					}
+
+					if (pct > remaining) {
+						frappe.msgprint("Only " + remaining + "% remaining overall.");
+						return;
+					}
+
+					let selected = (values.items || []).filter(i => i.include);
+
+					if (!selected.length) {
+						frappe.msgprint("Select at least one item.");
+						return;
+					}
+
+					d.hide();
+
+					frappe.model.open_mapped_doc({
+						method: "stems.stems.custom_scripts.sales_order.percentage_invoicing.make_sales_invoice_by_percentage",
+						frm: frm,
+						args: {
+							percentage: pct,
+							selected_items: selected
+						}
+					});
+				}
+			});
+
+			d.show();
+		}
+	});
+}
+
