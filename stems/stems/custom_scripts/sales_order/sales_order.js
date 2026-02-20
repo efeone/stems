@@ -6,6 +6,15 @@ frappe.ui.form.on('Sales Order', {
 		calculate_item_delivery_dates(frm);
 		allow_task_table_edit_after_submit(frm);
 
+        if (!frm.doc.enable_percentage_invoicing) return;
+		if (frm.doc.docstatus !== 1) return;
+
+		// Remove default Create Invoice button
+		frm.remove_custom_button(__('Sales Invoice'), __('Create'));
+
+		frm.add_custom_button(__('Sales Invoice'), function () {
+			open_percentage_dialog(frm);
+		}, __('Create'));
 	}
 });
 
@@ -117,3 +126,119 @@ function recalculate_task_amount(frm, cdt, cdn) {
 
 	frappe.model.set_value(cdt,cdn,"amount",(total * percentage) / 100);
 }
+
+
+// Opens a dialog to create a percentage invoice for the sales order
+function open_percentage_dialog(frm) {
+
+	let remaining = 100 - flt(frm.doc.per_billed || 0);
+
+	if (remaining <= 0) {
+		frappe.msgprint(__("Sales Order already fully invoiced."));
+		return;
+	}
+
+	frappe.call({
+		method: "stems.stems.custom_scripts.sales_order.percentage_invoicing.get_so_items",
+		args: { sales_order: frm.doc.name },
+		callback: function (r) {
+
+			let items = r.message || [];
+			let item_fields = [
+				{ fieldname: "include", fieldtype: "Check", label: __("Include"), in_list_view: 1 },
+				{ fieldname: "so_detail", fieldtype: "Data", hidden: 1 },
+				{ fieldname: "item_code", fieldtype: "Data", label: __("Item"), in_list_view: 1, read_only: 1 },
+				{ fieldname: "item_type", fieldtype: "Data", label: __("Type"), in_list_view: 1, read_only: 1 },
+				{ fieldname: "qty", fieldtype: "Float", label: __("Total Qty"), in_list_view: 1, read_only: 1 },
+				{ fieldname: "billed_qty", fieldtype: "Float", label: __("Billed Qty"), in_list_view: 1, read_only: 1 },
+				{ fieldname: "remaining_qty", fieldtype: "Float", label: __("Remaining Qty"), in_list_view: 1, read_only: 1 },
+				{ fieldname: "rate", fieldtype: "Currency", label: __("Rate"), in_list_view: 1, read_only: 1 },
+				{ fieldname: "total_amt", fieldtype: "Currency", label: __("Total Amt"), in_list_view: 1, read_only: 1 },
+				{ fieldname: "invoiced_amount", fieldtype: "Currency", label: __("Invoiced Amount"), in_list_view: 1, read_only: 1 },
+				{ fieldname: "remaining_amt", fieldtype: "Currency", label: __("Remaining Amount"), in_list_view: 1, read_only: 1 },
+				{ fieldname: "percentage", fieldtype: "Float", label: __("Percentage"), in_list_view: 1 }
+			];
+
+			let d = new frappe.ui.Dialog({
+				title: __("Create Percentage Invoice"),
+				size: "large",
+				fields: [
+					{
+						fieldname: "apply_to_all",
+						fieldtype: "Check",
+						label: __("Apply percentage to all items"),
+						default: 1,
+						description: __("If unchecked, set percentage per item in the table.")
+					},
+					{
+						fieldname: "percentage",
+						fieldtype: "Float",
+						label: __("Invoice Percentage"),
+						default: remaining,
+						description: __("Percentage of the order to bill in this invoice (when applying to all).")
+					},
+					{
+						fieldname: "items",
+						fieldtype: "Table",
+						label: __("Items"),
+						in_place_edit: true,
+						data: items,
+						fields: item_fields
+					}
+				],
+
+				primary_action_label: __("Create Invoice"),
+
+				primary_action(values) {
+
+					let apply_to_all = values.apply_to_all;
+					let pct = flt(values.percentage);
+					let selected = (values.items || []).filter(i => i.include);
+
+					if (!selected.length) {
+						frappe.msgprint(__("Select at least one item."));
+						return;
+					}
+
+					if (apply_to_all) {
+						if (!(pct > 0 && pct <= 100)) {
+							frappe.msgprint(__("Enter percentage between 1 and 100."));
+							return;
+						}
+						if (pct > remaining) {
+							frappe.msgprint(__("Only {0}% remaining overall.").format(remaining));
+							return;
+						}
+					} else {
+						let invalid = selected.some(i => !(flt(i.percentage) > 0 && flt(i.percentage) <= 100));
+						if (invalid) {
+							frappe.msgprint(__("Enter a percentage (1–100) for each selected item when not applying to all."));
+							return;
+						}
+					}
+
+					d.hide();
+
+					frappe.model.open_mapped_doc({
+						method: "stems.stems.custom_scripts.sales_order.percentage_invoicing.make_sales_invoice_by_percentage",
+						frm: frm,
+						args: {
+							percentage: pct,
+							apply_to_all: apply_to_all ? 1 : 0,
+							selected_items: selected
+						}
+					});
+				}
+			});
+
+			// Show/hide single percentage based on "Apply to all"
+			d.fields_dict.apply_to_all.$input.on("change", function () {
+				let apply = d.get_value("apply_to_all");
+				d.fields_dict.percentage.df.hidden = !apply;
+				d.fields_dict.percentage.refresh();
+			});
+			d.show();
+		}
+	});
+}
+
