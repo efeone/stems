@@ -183,7 +183,18 @@ doc_events = {
 		],
 	},
 	"Sales Order": {
-		"on_submit": "stems.stems.custom_scripts.sales_order.sales_order.create_project_from_sales_order",
+		"on_submit": [
+			"stems.stems.custom_scripts.sales_order.sales_order.create_project_from_sales_order",
+			"stems.stems.custom_scripts.sales_order.percentage_invoicing.set_initial_so_item_amounts",
+		],
+	},
+	"Sales Invoice": {
+		"on_submit": [
+			"stems.stems.custom_scripts.sales_order.percentage_invoicing.update_so_item_invoiced_amounts",
+		],
+		"on_cancel": [
+			"stems.stems.custom_scripts.sales_order.percentage_invoicing.update_so_item_invoiced_amounts",
+		],
 	},
 }
 

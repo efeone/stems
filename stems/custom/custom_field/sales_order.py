@@ -1,8 +1,26 @@
 def get_sales_order_custom_fields():
 	"""
-	Custom fields that need to be added to the Sales Order DocType
+	Custom fields that need to be added to the Sales Order DocType and its child table.
 	"""
 	return {
+		"Sales Order Item": [
+			{
+				"fieldname": "invoiced_amount",
+				"fieldtype": "Currency",
+				"label": "Invoiced Amount",
+				"insert_after": "amount",
+				"read_only": 1,
+				"description": "Total amount invoiced against this line from Sales Invoices (updated when an SI is submitted).",
+			},
+			{
+				"fieldname": "remaining_amount",
+				"fieldtype": "Currency",
+				"label": "Remaining Amount",
+				"insert_after": "invoiced_amount",
+				"read_only": 1,
+				"description": "Amount yet to be invoiced (Total - Invoiced).",
+			},
+		],
 		"Sales Order": [
 			{
 				"fieldname": "bill_of_quantity",

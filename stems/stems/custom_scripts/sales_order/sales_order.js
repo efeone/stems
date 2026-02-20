@@ -128,14 +128,13 @@ function recalculate_task_amount(frm, cdt, cdn) {
 }
 
 
-
-// ========================= Percentage Invoicing Logic =========================
+// Opens a dialog to create a percentage invoice for the sales order
 function open_percentage_dialog(frm) {
 
 	let remaining = 100 - flt(frm.doc.per_billed || 0);
 
 	if (remaining <= 0) {
-		frappe.msgprint("Sales Order already fully invoiced.");
+		frappe.msgprint(__("Sales Order already fully invoiced."));
 		return;
 	}
 
@@ -145,64 +144,77 @@ function open_percentage_dialog(frm) {
 		callback: function (r) {
 
 			let items = r.message || [];
+			let item_fields = [
+				{ fieldname: "include", fieldtype: "Check", label: __("Include"), in_list_view: 1 },
+				{ fieldname: "so_detail", fieldtype: "Data", hidden: 1 },
+				{ fieldname: "item_code", fieldtype: "Data", label: __("Item"), in_list_view: 1, read_only: 1 },
+				{ fieldname: "item_type", fieldtype: "Data", label: __("Type"), in_list_view: 1, read_only: 1 },
+				{ fieldname: "qty", fieldtype: "Float", label: __("Total Qty"), in_list_view: 1, read_only: 1 },
+				{ fieldname: "billed_qty", fieldtype: "Float", label: __("Billed Qty"), in_list_view: 1, read_only: 1 },
+				{ fieldname: "remaining_qty", fieldtype: "Float", label: __("Remaining Qty"), in_list_view: 1, read_only: 1 },
+				{ fieldname: "rate", fieldtype: "Currency", label: __("Rate"), in_list_view: 1, read_only: 1 },
+				{ fieldname: "total_amt", fieldtype: "Currency", label: __("Total Amt"), in_list_view: 1, read_only: 1 },
+				{ fieldname: "invoiced_amount", fieldtype: "Currency", label: __("Invoiced Amount"), in_list_view: 1, read_only: 1 },
+				{ fieldname: "remaining_amt", fieldtype: "Currency", label: __("Remaining Amount"), in_list_view: 1, read_only: 1 },
+				{ fieldname: "percentage", fieldtype: "Float", label: __("Percentage"), in_list_view: 1 }
+			];
 
 			let d = new frappe.ui.Dialog({
-				title: "Create Percentage Invoice",
+				title: __("Create Percentage Invoice"),
 				size: "large",
 				fields: [
-
+					{
+						fieldname: "apply_to_all",
+						fieldtype: "Check",
+						label: __("Apply percentage to all items"),
+						default: 1,
+						description: __("If unchecked, set percentage per item in the table.")
+					},
 					{
 						fieldname: "percentage",
 						fieldtype: "Float",
-						label: "Invoice Percentage",
-						reqd: 1,
-						default: remaining
+						label: __("Invoice Percentage"),
+						default: remaining,
+						description: __("Percentage of the order to bill in this invoice (when applying to all).")
 					},
-
 					{
 						fieldname: "items",
 						fieldtype: "Table",
-						label: "Items",
+						label: __("Items"),
 						in_place_edit: true,
 						data: items,
-						fields: [
-                                    { fieldname: "include", fieldtype: "Check", label: "Include", in_list_view: 1 },
-                                    { fieldname: "so_detail", fieldtype: "Data", hidden: 1 },
-
-                                    { fieldname: "item_code", fieldtype: "Data", label: "Item", in_list_view: 1, read_only: 1 },
-
-                                    { fieldname: "qty", fieldtype: "Float", label: "Total Qty", in_list_view: 1, read_only: 1 },
-                                    { fieldname: "billed_qty", fieldtype: "Float", label: "Billed Qty", in_list_view: 1, read_only: 1 },
-                                    { fieldname: "remaining_qty", fieldtype: "Float", label: "Remaining Qty", in_list_view: 1, read_only: 1 },
-
-                                    { fieldname: "remaining_percentage", fieldtype: "Float", label: "Remaining %", in_list_view: 1, read_only: 1 },
-
-                                    { fieldname: "rate", fieldtype: "Currency", label: "Rate", in_list_view: 1, read_only: 1 }
-                                ]
+						fields: item_fields
 					}
 				],
 
-				primary_action_label: "Create Invoice",
+				primary_action_label: __("Create Invoice"),
 
 				primary_action(values) {
 
+					let apply_to_all = values.apply_to_all;
 					let pct = flt(values.percentage);
-
-					if (!(pct > 0 && pct <= 100)) {
-						frappe.msgprint("Enter percentage between 1 and 100.");
-						return;
-					}
-
-					if (pct > remaining) {
-						frappe.msgprint("Only " + remaining + "% remaining overall.");
-						return;
-					}
-
 					let selected = (values.items || []).filter(i => i.include);
 
 					if (!selected.length) {
-						frappe.msgprint("Select at least one item.");
+						frappe.msgprint(__("Select at least one item."));
 						return;
+					}
+
+					if (apply_to_all) {
+						if (!(pct > 0 && pct <= 100)) {
+							frappe.msgprint(__("Enter percentage between 1 and 100."));
+							return;
+						}
+						if (pct > remaining) {
+							frappe.msgprint(__("Only {0}% remaining overall.").format(remaining));
+							return;
+						}
+					} else {
+						let invalid = selected.some(i => !(flt(i.percentage) > 0 && flt(i.percentage) <= 100));
+						if (invalid) {
+							frappe.msgprint(__("Enter a percentage (1–100) for each selected item when not applying to all."));
+							return;
+						}
 					}
 
 					d.hide();
@@ -212,12 +224,19 @@ function open_percentage_dialog(frm) {
 						frm: frm,
 						args: {
 							percentage: pct,
+							apply_to_all: apply_to_all ? 1 : 0,
 							selected_items: selected
 						}
 					});
 				}
 			});
 
+			// Show/hide single percentage based on "Apply to all"
+			d.fields_dict.apply_to_all.$input.on("change", function () {
+				let apply = d.get_value("apply_to_all");
+				d.fields_dict.percentage.df.hidden = !apply;
+				d.fields_dict.percentage.refresh();
+			});
 			d.show();
 		}
 	});
