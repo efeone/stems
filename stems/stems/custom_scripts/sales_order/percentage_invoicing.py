@@ -86,7 +86,6 @@ def set_initial_so_item_amounts(sales_order, method=None):
 
 @frappe.whitelist()
 def get_so_items(sales_order):
-	""" Retrieves the sales order items along with their billed and remaining quantities and amounts for percentage invoicing."""
 	so = frappe.get_doc("Sales Order", sales_order)
 	data = []
 	for row in so.items:
@@ -94,16 +93,8 @@ def get_so_items(sales_order):
 		total_qty = flt(row.qty)
 		total_rate = flt(row.rate)
 		total_amt = total_qty * total_rate
-		stored_invoiced = row.get("invoiced_amount")
-		stored_remaining = row.get("remaining_amount")
-		if stored_invoiced is not None or stored_remaining is not None:
-			invoiced_amt = flt(stored_invoiced)
-			remaining_amt = flt(stored_remaining)
-			if remaining_amt <= 0 and total_amt > 0:
-				remaining_amt = max(0, total_amt - invoiced_amt)
-		else:
-			invoiced_amt = billed_amt
-			remaining_amt = max(0, total_amt - billed_amt)
+		invoiced_amt = billed_amt
+		remaining_amt = max(0, total_amt - billed_amt)
 		remaining_qty = max(0, total_qty - billed_qty)
 		remaining_qty_pct = (remaining_qty / total_qty * 100) if total_qty else 0
 		remaining_amt_pct = (remaining_amt / total_amt * 100) if total_amt else 0
@@ -124,7 +115,7 @@ def get_so_items(sales_order):
 			"invoiced_amount": invoiced_amt,
 			"remaining_amt_percentage": round(remaining_amt_pct, 2),
 			"item_type": item_type,
-			"include": 1 if has_remaining else 0,
+			"include": 0,
 		})
 	return data
 
@@ -169,15 +160,18 @@ def make_sales_invoice_by_percentage(source_name, target_doc=None):
 		if apply_to_all:
 			fraction = (percentage / remaining_overall_pct) if remaining_overall_pct else 0
 		else:
-			item_percentage = flt(sel.get("percentage"))
-			if not item_percentage or item_percentage <= 0:
+			if not flt(sel.get("percentage")) or flt(sel.get("percentage")) <= 0:
 				continue
-			fraction = min(1.0, item_percentage / 100.0)
 		if item_type == "Stock":
 			if remaining_qty <= 0:
 				continue
-			qty_to_bill = flt(remaining_qty * fraction, item.precision("qty"))
-			qty_to_bill = min(qty_to_bill, remaining_qty)
+			if apply_to_all:
+				qty_to_bill = flt(remaining_qty * fraction, item.precision("qty"))
+			else:
+				item_pct = flt(sel.get("percentage")) / 100.0
+				amt_to_bill = min(remaining_amt, flt(total_amt * item_pct, item.precision("amount")))
+				qty_to_bill = (amt_to_bill / total_rate) if total_rate else 0
+			qty_to_bill = min(flt(qty_to_bill, item.precision("qty")), remaining_qty)
 			if qty_to_bill <= 0:
 				continue
 			item.qty = qty_to_bill
@@ -185,7 +179,11 @@ def make_sales_invoice_by_percentage(source_name, target_doc=None):
 		else:
 			if remaining_amt <= 0:
 				continue
-			amt_to_bill = flt(remaining_amt * fraction, item.precision("amount"))
+			if apply_to_all:
+				amt_to_bill = flt(remaining_amt * fraction, item.precision("amount"))
+			else:
+				item_pct = flt(sel.get("percentage")) / 100.0
+				amt_to_bill = min(remaining_amt, flt(total_amt * item_pct, item.precision("amount")))
 			amt_to_bill = min(amt_to_bill, remaining_amt)
 			if amt_to_bill <= 0:
 				continue
