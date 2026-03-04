@@ -177,7 +177,7 @@ function open_percentage_dialog(frm) {
 						fieldname: "item_type_filter",
 						fieldtype: "Select",
 						label: __("Item Type Filter"),
-						default: "",
+						default: "All Items",
 						options: [
 							{ label: "Stock Items", value: "Stock Items" },
 							{ label: "Service Items", value: "Service Items" },
