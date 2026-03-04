@@ -83,117 +83,173 @@ def set_initial_so_item_amounts(sales_order, method=None):
 		)
 	frappe.db.commit()
 
-
 @frappe.whitelist()
 def get_so_items(sales_order):
-	""" Retrieves the sales order items along with their billed and remaining quantities and amounts for percentage invoicing."""
-	so = frappe.get_doc("Sales Order", sales_order)
-	data = []
-	for row in so.items:
-		billed_qty, billed_amt = _get_billed_qty_and_amount(so.name, row.name)
-		total_qty = flt(row.qty)
-		total_rate = flt(row.rate)
-		total_amt = total_qty * total_rate
-		stored_invoiced = row.get("invoiced_amount")
-		stored_remaining = row.get("remaining_amount")
-		if stored_invoiced is not None or stored_remaining is not None:
-			invoiced_amt = flt(stored_invoiced)
-			remaining_amt = flt(stored_remaining)
-			if remaining_amt <= 0 and total_amt > 0:
-				remaining_amt = max(0, total_amt - invoiced_amt)
-		else:
-			invoiced_amt = billed_amt
-			remaining_amt = max(0, total_amt - billed_amt)
-		remaining_qty = max(0, total_qty - billed_qty)
-		remaining_qty_pct = (remaining_qty / total_qty * 100) if total_qty else 0
-		remaining_amt_pct = (remaining_amt / total_amt * 100) if total_amt else 0
-		is_stock = frappe.db.get_value("Item", row.item_code, "is_stock_item") or 0
-		item_type = "Stock" if is_stock else "Service"
-		has_remaining = remaining_qty > 0 or remaining_amt > 0
-		data.append({
-			"so_detail": row.name,
-			"item_code": row.item_code,
-			"qty": total_qty,
-			"billed_qty": billed_qty,
-			"remaining_qty": remaining_qty,
-			"remaining_qty_percentage": round(remaining_qty_pct, 2),
-			"rate": total_rate,
-			"total_amt": total_amt,
-			"billed_amt": invoiced_amt,
-			"remaining_amt": remaining_amt,
-			"invoiced_amount": invoiced_amt,
-			"remaining_amt_percentage": round(remaining_amt_pct, 2),
-			"item_type": item_type,
-			"include": 1 if has_remaining else 0,
-		})
-	return data
+    """ Retrieves the sales order items for percentage invoicing, skipping fully invoiced items """
+    so = frappe.get_doc("Sales Order", sales_order)
+    data = []
 
+    for row in so.items:
+        billed_qty, billed_amt = _get_billed_qty_and_amount(so.name, row.name)
+
+        total_qty = flt(row.qty)
+        total_rate = flt(row.rate)
+        total_amt = total_qty * total_rate
+        stored_invoiced = row.get("invoiced_amount")
+        stored_remaining = row.get("remaining_amount")
+
+        if stored_invoiced is not None or stored_remaining is not None:
+            invoiced_amt = flt(stored_invoiced)
+            remaining_amt = flt(stored_remaining)
+            if remaining_amt <= 0 and total_amt > 0:
+                remaining_amt = max(0, total_amt - invoiced_amt)
+        else:
+            invoiced_amt = billed_amt
+            remaining_amt = max(0, total_amt - billed_amt)
+
+        remaining_qty = max(0, total_qty - billed_qty)
+        if remaining_qty <= 0 or remaining_amt <= 0:
+            continue
+
+        remaining_qty_pct = (remaining_qty / total_qty * 100) if total_qty else 0
+        remaining_amt_pct = (remaining_amt / total_amt * 100) if total_amt else 0
+
+        is_stock = frappe.db.get_value("Item", row.item_code, "is_stock_item") or 0
+        item_type = "Stock" if is_stock else "Service"
+
+        data.append({
+            "so_detail": row.name,
+            "item_code": row.item_code,
+            "qty": total_qty,
+            "billed_qty": billed_qty,
+            "remaining_qty": remaining_qty,
+            "remaining_qty_percentage": round(remaining_qty_pct, 2),
+            "rate": total_rate,
+            "total_amt": total_amt,
+            "billed_amt": invoiced_amt,
+            "remaining_amt": remaining_amt,
+            "invoiced_amount": invoiced_amt,
+            "remaining_amt_percentage": round(remaining_amt_pct, 2),
+            "item_type": item_type,
+            "uom": row.uom,
+        })
+
+    return data
 
 @frappe.whitelist()
 def make_sales_invoice_by_percentage(source_name, target_doc=None):
-	""" Creates a sales invoice from a sales order based on the specified percentage for invoicing."""
+	"""
+	 Creates a sales invoice from a sales order based on the specified percentage for invoicing, with separate handling for stock and service items.
+	""" 
+
 	args = frappe.parse_json(frappe.form_dict.get("args") or "{}")
 	percentage = flt(args.get("percentage"))
 	apply_to_all = args.get("apply_to_all", True)
 	selected_items = args.get("selected_items") or []
+
 	if not selected_items:
 		frappe.throw(_("Select at least one item"))
+
 	so = frappe.get_doc("Sales Order", source_name)
+
 	if so.docstatus != 1:
 		frappe.throw(_("Sales Order must be submitted"))
+
 	per_billed = flt(so.per_billed or 0)
 	remaining_overall_pct = 100 - per_billed
+
 	if apply_to_all:
 		if not percentage or percentage <= 0:
 			frappe.throw(_("Invalid Percentage"))
 		if percentage > remaining_overall_pct:
 			frappe.throw(_("Only {0}% remaining overall").format(remaining_overall_pct))
+
 	selected_map = {d["so_detail"]: d for d in selected_items}
+
 	si = make_sales_invoice(source_name, target_doc)
 	new_items = []
+
 	for item in si.items:
+
 		if item.so_detail not in selected_map:
 			continue
+
 		sel = selected_map[item.so_detail]
+
 		so_row = next((x for x in so.items if x.name == item.so_detail), None)
 		if not so_row:
 			continue
+
 		item_type = sel.get("item_type") or "Stock"
+
 		total_qty = flt(so_row.qty)
 		total_rate = flt(so_row.rate)
 		total_amt = total_qty * total_rate
+
 		billed_qty = flt(sel.get("billed_qty") or 0)
 		billed_amt = flt(sel.get("billed_amt") or 0)
-		remaining_qty = flt(sel.get("remaining_qty") or max(0, total_qty - billed_qty))
-		remaining_amt = flt(sel.get("remaining_amt") or max(0, total_amt - billed_amt))
+
+		remaining_qty = max(0, total_qty - billed_qty)
+		remaining_amt = max(0, total_amt - billed_amt)
+
+		if remaining_qty <= 0 and remaining_amt <= 0:
+			continue
 		if apply_to_all:
-			fraction = (percentage / remaining_overall_pct) if remaining_overall_pct else 0
+			fraction = percentage / 100.0
 		else:
 			item_percentage = flt(sel.get("percentage"))
 			if not item_percentage or item_percentage <= 0:
 				continue
 			fraction = min(1.0, item_percentage / 100.0)
-		if item_type == "Stock":
-			if remaining_qty <= 0:
+		fraction_exists = (total_qty != int(total_qty))
+		whole_qty = int(total_qty)
+
+		if fraction_exists:
+
+			if whole_qty <= 0:
 				continue
-			qty_to_bill = flt(remaining_qty * fraction, item.precision("qty"))
-			qty_to_bill = min(qty_to_bill, remaining_qty)
-			if qty_to_bill <= 0:
-				continue
-			item.qty = qty_to_bill
-			item.rate = total_rate
+			rate_after_percentage = total_rate * fraction
+			new_total = total_qty * rate_after_percentage
+			new_total = min(new_total, remaining_amt)
+			final_rate = flt(
+				new_total / whole_qty,
+				item.precision("rate")
+			)
+
+			item.qty = min(whole_qty, remaining_qty)
+			item.rate = final_rate
 		else:
-			if remaining_amt <= 0:
-				continue
-			amt_to_bill = flt(remaining_amt * fraction, item.precision("amount"))
-			amt_to_bill = min(amt_to_bill, remaining_amt)
-			if amt_to_bill <= 0:
-				continue
-			item.qty = total_qty
-			item.rate = (amt_to_bill / total_qty) if total_qty else 0
+
+			if item_type == "Stock":
+
+				qty_to_bill = flt(
+					total_qty * fraction,
+					item.precision("qty")
+				)
+
+				qty_to_bill = min(qty_to_bill, remaining_qty)
+
+				if qty_to_bill <= 0:
+					continue
+
+				item.qty = qty_to_bill
+				item.rate = total_rate
+
+			else: 
+				so_row = next((x for x in so.items if x.name == item.so_detail), None)
+				if getattr(so_row, "billed_rate", None):
+					item.rate = flt(so_row.billed_rate, item.precision("rate"))
+				else:
+					item.rate = flt(total_rate * fraction, item.precision("rate"))
+					so_row.billed_rate = item.rate
+				item.qty = remaining_qty
+
 		new_items.append(item)
+
 	if not new_items:
 		frappe.throw(_("No items left to invoice"))
+
 	si.set("items", new_items)
 	si.calculate_taxes_and_totals()
+
 	return si

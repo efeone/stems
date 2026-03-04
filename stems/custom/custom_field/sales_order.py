@@ -81,7 +81,7 @@ def get_sales_order_custom_fields():
 				"options": "Task Wise Pay",
 				"allow_on_submit": 1,
 				"insert_after": "task_wise_payment_summary",
-			},
+			}
 		]
 	}
 
