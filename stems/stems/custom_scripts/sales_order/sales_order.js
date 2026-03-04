@@ -144,12 +144,13 @@ function open_percentage_dialog(frm) {
 		callback: function (r) {
 
 			let items = r.message || [];
-            let original_items = items.slice();
+			let original_items = items.slice();
+
 			let item_fields = [
 				{ fieldname: "so_detail", fieldtype: "Data", hidden: 1 },
 				{ fieldname: "item_code", fieldtype: "Data", label: __("Item"), in_list_view: 1, read_only: 1 },
-				{ fieldname: "item_type", fieldtype: "Data", label: __("Type"), in_list_view: 1, read_only: 1 },
-                { fieldname: "uom", fieldtype: "Link", options: "UOM", label: __("UOM"), in_list_view: 1, read_only: 1 },
+				{ fieldname: "item_type", fieldtype: "Data", label: __("Type"), read_only: 1 },
+				{ fieldname: "uom", fieldtype: "Link", options: "UOM", label: __("UOM"), read_only: 1 },
 				{ fieldname: "qty", fieldtype: "Float", label: __("Total Qty"), in_list_view: 1, read_only: 1 },
 				{ fieldname: "billed_qty", fieldtype: "Float", label: __("Billed Qty"), in_list_view: 1, read_only: 1 },
 				{ fieldname: "remaining_qty", fieldtype: "Float", label: __("Remaining Qty"), in_list_view: 1, read_only: 1 },
@@ -164,21 +165,15 @@ function open_percentage_dialog(frm) {
 				title: __("Create Percentage Invoice"),
 				size: "extra-large",
 				fields: [
-					{
-						fieldname: "apply_to_all",
-						fieldtype: "Check",
-						label: __("Apply percentage to all items"),
-						default: 1,
-						description: __("If unchecked, set percentage per item in the table.")
-					},
+
 					{
 						fieldname: "percentage",
 						fieldtype: "Float",
 						label: __("Invoice Percentage"),
 						default: remaining,
-						description: __("Percentage of the order to bill in this invoice (when applying to all).")
+						description: __("Percentage of the order to bill in this invoice.")
 					},
-                    {
+					{
 						fieldname: "item_type_filter",
 						fieldtype: "Select",
 						label: __("Item Type Filter"),
@@ -188,7 +183,7 @@ function open_percentage_dialog(frm) {
 							{ label: "Service Items", value: "Service Items" },
 							{ label: "All Items", value: "All Items" }
 						],
-						description: __("Filter items by type (e.g., 'Stock Items', 'Service Items').")
+						description: __("Filter items by type.")
 					},
 					{
 						fieldname: "items",
@@ -204,7 +199,6 @@ function open_percentage_dialog(frm) {
 
 				primary_action(values) {
 
-					let apply_to_all = values.apply_to_all;
 					let pct = flt(values.percentage);
 					let selected = d.fields_dict.items.grid.get_selected_children();
 
@@ -213,21 +207,14 @@ function open_percentage_dialog(frm) {
 						return;
 					}
 
-					if (apply_to_all) {
-						if (!(pct > 0 && pct <= 100)) {
-							frappe.msgprint(__("Enter percentage between 1 and 100."));
-							return;
-						}
-						if (pct > remaining) {
-							frappe.msgprint(__("Only {0}% remaining overall.").format(remaining));
-							return;
-						}
-					} else {
-						let invalid = selected.some(i => !(flt(i.percentage) > 0 && flt(i.percentage) <= 100));
-						if (invalid) {
-							frappe.msgprint(__("Enter a percentage (1–100) for each selected item when not applying to all."));
-							return;
-						}
+					if (!(pct > 0 && pct <= 100)) {
+						frappe.msgprint(__("Enter percentage between 1 and 100."));
+						return;
+					}
+
+					if (pct > remaining) {
+						frappe.msgprint(__("Only {0}% remaining overall.").format(remaining));
+						return;
 					}
 
 					d.hide();
@@ -237,13 +224,12 @@ function open_percentage_dialog(frm) {
 						frm: frm,
 						args: {
 							percentage: pct,
-							apply_to_all: apply_to_all ? 1 : 0,
 							selected_items: selected
 						}
 					});
 				}
 			});
-            d.fields_dict.item_type_filter.$input.on("change", function () {
+			d.fields_dict.item_type_filter.$input.on("change", function () {
 
 				let selected = d.get_value("item_type_filter");
 				let filtered = [];
@@ -262,15 +248,7 @@ function open_percentage_dialog(frm) {
 				d.fields_dict.items.grid.refresh();
 			});
 
-
-			// Show/hide single percentage based on "Apply to all"
-			d.fields_dict.apply_to_all.$input.on("change", function () {
-				let apply = d.get_value("apply_to_all");
-				d.fields_dict.percentage.df.hidden = !apply;
-				d.fields_dict.percentage.refresh();
-			});
 			d.show();
 		}
 	});
 }
-

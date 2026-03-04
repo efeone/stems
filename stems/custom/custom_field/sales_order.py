@@ -59,6 +59,7 @@ def get_sales_order_custom_fields():
 				"fieldtype": "Check",
 				"label": "Enable Percentage-Based Invoicing",
 				"insert_after": "project_name",
+				"allow_on_submit": 1,
 				"description": "When checked, Create Sales Invoice opens a popup to enter % and select items (partial invoicing).",
 			},
 			{

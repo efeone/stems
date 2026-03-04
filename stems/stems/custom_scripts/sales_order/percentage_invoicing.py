@@ -85,22 +85,26 @@ def set_initial_so_item_amounts(sales_order, method=None):
 
 @frappe.whitelist()
 def get_so_items(sales_order):
-    """ Retrieves the sales order items for percentage invoicing, skipping fully invoiced items """
+    """ Retrieves the sales order items for percentage invoicing """
+
     so = frappe.get_doc("Sales Order", sales_order)
     data = []
 
     for row in so.items:
+
         billed_qty, billed_amt = _get_billed_qty_and_amount(so.name, row.name)
 
         total_qty = flt(row.qty)
         total_rate = flt(row.rate)
         total_amt = total_qty * total_rate
+
         stored_invoiced = row.get("invoiced_amount")
         stored_remaining = row.get("remaining_amount")
 
         if stored_invoiced is not None or stored_remaining is not None:
             invoiced_amt = flt(stored_invoiced)
             remaining_amt = flt(stored_remaining)
+
             if remaining_amt <= 0 and total_amt > 0:
                 remaining_amt = max(0, total_amt - invoiced_amt)
         else:
@@ -108,14 +112,19 @@ def get_so_items(sales_order):
             remaining_amt = max(0, total_amt - billed_amt)
 
         remaining_qty = max(0, total_qty - billed_qty)
-        if remaining_qty <= 0 or remaining_amt <= 0:
-            continue
-
-        remaining_qty_pct = (remaining_qty / total_qty * 100) if total_qty else 0
-        remaining_amt_pct = (remaining_amt / total_amt * 100) if total_amt else 0
 
         is_stock = frappe.db.get_value("Item", row.item_code, "is_stock_item") or 0
         item_type = "Stock" if is_stock else "Service"
+
+        if is_stock:
+            if remaining_qty <= 0:
+                continue
+        else:
+            if remaining_amt <= 0:
+                continue
+
+        remaining_qty_pct = (remaining_qty / total_qty * 100) if total_qty else 0
+        remaining_amt_pct = (remaining_amt / total_amt * 100) if total_amt else 0
 
         data.append({
             "so_detail": row.name,
@@ -242,7 +251,7 @@ def make_sales_invoice_by_percentage(source_name, target_doc=None):
 				else:
 					item.rate = flt(total_rate * fraction, item.precision("rate"))
 					so_row.billed_rate = item.rate
-				item.qty = remaining_qty
+				item.qty = total_qty
 
 		new_items.append(item)
 
