@@ -292,3 +292,4 @@ def make_sales_invoice_by_percentage(source_name, target_doc=None):
 	si.calculate_taxes_and_totals()
 
 	return si
+	
