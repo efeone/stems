@@ -148,8 +148,10 @@ def get_so_items(sales_order):
 @frappe.whitelist()
 def make_sales_invoice_by_percentage(source_name, target_doc=None):
 	"""
-	 Creates a sales invoice from a sales order based on the specified percentage for invoicing, with separate handling for stock and service items.
-	""" 
+	Creates a sales invoice from a sales order based on the specified
+	percentage for invoicing, with separate handling for stock and service items.
+	Also handles UOM where qty must be whole number.
+	"""
 
 	args = frappe.parse_json(frappe.form_dict.get("args") or "{}")
 	percentage = flt(args.get("percentage"))
@@ -203,6 +205,7 @@ def make_sales_invoice_by_percentage(source_name, target_doc=None):
 
 		if remaining_qty <= 0 and remaining_amt <= 0:
 			continue
+
 		if apply_to_all:
 			fraction = percentage / 100.0
 		else:
@@ -210,6 +213,7 @@ def make_sales_invoice_by_percentage(source_name, target_doc=None):
 			if not item_percentage or item_percentage <= 0:
 				continue
 			fraction = min(1.0, item_percentage / 100.0)
+
 		fraction_exists = (total_qty != int(total_qty))
 		whole_qty = int(total_qty)
 
@@ -217,9 +221,11 @@ def make_sales_invoice_by_percentage(source_name, target_doc=None):
 
 			if whole_qty <= 0:
 				continue
+
 			rate_after_percentage = total_rate * fraction
 			new_total = total_qty * rate_after_percentage
 			new_total = min(new_total, remaining_amt)
+
 			final_rate = flt(
 				new_total / whole_qty,
 				item.precision("rate")
@@ -227,6 +233,7 @@ def make_sales_invoice_by_percentage(source_name, target_doc=None):
 
 			item.qty = min(whole_qty, remaining_qty)
 			item.rate = final_rate
+
 		else:
 
 			if item_type == "Stock":
@@ -241,16 +248,39 @@ def make_sales_invoice_by_percentage(source_name, target_doc=None):
 				if qty_to_bill <= 0:
 					continue
 
-				item.qty = qty_to_bill
-				item.rate = total_rate
+				uom_doc = frappe.get_cached_doc("UOM", item.uom)
+				must_be_whole = uom_doc.must_be_whole_number
 
-			else: 
-				so_row = next((x for x in so.items if x.name == item.so_detail), None)
+				if must_be_whole and qty_to_bill != int(qty_to_bill):
+
+					whole_qty = int(qty_to_bill)
+
+					if whole_qty <= 0:
+						continue
+
+					total_amount = qty_to_bill * total_rate
+
+					adjusted_rate = flt(
+						total_amount / whole_qty,
+						item.precision("rate")
+					)
+
+					item.qty = whole_qty
+					item.rate = adjusted_rate
+
+				else:
+
+					item.qty = qty_to_bill
+					item.rate = total_rate
+
+			else:
+
 				if getattr(so_row, "billed_rate", None):
 					item.rate = flt(so_row.billed_rate, item.precision("rate"))
 				else:
 					item.rate = flt(total_rate * fraction, item.precision("rate"))
 					so_row.billed_rate = item.rate
+
 				item.qty = total_qty
 
 		new_items.append(item)
@@ -262,3 +292,4 @@ def make_sales_invoice_by_percentage(source_name, target_doc=None):
 	si.calculate_taxes_and_totals()
 
 	return si
+	
